@@ -1,4 +1,3 @@
-
 # ProcureHub  
 *A comprehensive web-based procurement and auction platform*
 
@@ -7,8 +6,8 @@ ProcureHub is a modern web-based platform that streamlines the procurement proce
 
 ---
 
-## Preview
-// [na kraju link dodati]
+## Preview  
+https://procurehub.up.railway.app/
 
 ---
 
@@ -55,5 +54,28 @@ Our development is organized into logical sprints with two dedicated teams:
 
 ---
 
-## Getting Started  
-// [update-at na kraju]
+## Contributors  
+
+### Team 1:  
+- **[Mina Duranović](https://github.com/minaduranovic)** 
+- **[Lejla Hadžić](https://github.com/lhadzic1)** 
+- **[Ajla Rogo](https://github.com/arogo2)**
+- **[Mirza Mahmutović](https://github.com/MMahmutovicc)**
+- **[Mirza Olovčić](https://github.com/molovcic)**
+- **[Mersid Pilipović](https://github.com/MersidPi)**
+- **[Medin Mujković](https://github.com/medinmujkovic)**
+- **[Rijad Okerić](https://github.com/rokeric1)**
+- **[Amel Ridžal](https://github.com/AM37AM37)** 
+
+### Team 2:   
+- **[Ivona Jozić](https://github.com/ijozic1)** 
+- **[Amila Kukić](https://github.com/amilakukic)** 
+- **[Dženeta Milić](https://github.com/dmilic1)** 
+- **[Irma Galijašević](https://github.com/IrmaGal)**
+- **[Zehra Buza](https://github.com/ZehraBuza)**
+- **[Harun Mioč](https://github.com/harunmioc)**
+- **[Muhamed Husić](https://github.com/HMByteSensei)**
+- **[Nedim Banda](https://github.com/nbanda1)** 
+---
+
+© 2025 ProcureHub. All rights reserved.
