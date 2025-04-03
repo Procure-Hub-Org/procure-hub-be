@@ -25,17 +25,20 @@ exports.registerValidator = [
     body('role')
       .isIn(['buyer', 'seller'])
       .withMessage('Role must be either buyer or seller'),
+    body('address')
+        .notEmpty()
+        .trim()
+        .withMessage('Address is required'),
     body('company_name')
       .optional()
       .trim(),
     body('phone_number')
-      .optional()
-      .trim()
+        .notEmpty()
+        .withMessage('Phone number is required')
+        .trim()
+        .bail()
       .matches(/^\+(\d{1,3})\s?(\d{1,15})(\s?\d{1,15})*$/)      // regex za broj telefona (+country_code phone_number)
       .withMessage('Please enter a valid phone number'),
-    body('address')
-      .optional()
-      .trim(),
     body('company_address')
       .optional()
       .trim()

@@ -48,7 +48,7 @@ exports.register = async (req, res) => {
       status: 'pending' 
     });
 
-    // Uklanjanje hashiranog passworda iz odgovora
+    // Uklanjanje hashiranog passworda iz JSON odgovora
     const userResponse = user.toJSON();
     delete userResponse.password_hash;
 
