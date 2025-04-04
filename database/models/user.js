@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const User = sequelize.define('User', {
+    const User = sequelize.define('user', {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -69,12 +69,12 @@ module.exports = (sequelize, DataTypes) => {
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.literal('CURRENT_TIMESTAMP'),
+        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       },
       updated_at: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.literal('CURRENT_TIMESTAMP'),
+        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
       },
       suspended_at: {
         type: DataTypes.DATE,
@@ -93,7 +93,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: 'SET NULL',
       },
-    });
+    }, 
+    {
+      tableName: 'users',  
+      underscored: true,
+    });;
   
     return User;
 };
