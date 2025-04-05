@@ -1,5 +1,6 @@
 const db = require('../../database/models');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt'); 
 const config = require('../config/auth');
 
 exports.login = async (req, res) => {
@@ -8,15 +9,15 @@ exports.login = async (req, res) => {
     
     console.log('Attempting login for:', email);
     
-    // Traži korisnika po emailu
-    const user = await db.User.findOne({ where: { email } });
+    // Traži korisnika po emailu - koristi db.user
+    const user = await db.user.findOne({ where: { email } });
     
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    // DIREKTNO POREĐENJE LOZINKI (samo za testiranje)
-    const isPasswordValid = (password === user.password_hash);
+    // SIGURNO POREĐENJE LOZINKI POMOĆU bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -29,7 +30,7 @@ exports.login = async (req, res) => {
     
     console.log('JWT Secret:', config.jwtSecret);
     
-    // Kreiram token
+    // Kreiraj token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       config.jwtSecret,
