@@ -6,6 +6,7 @@ const userRoutes = require('./src/routes/userRoutes.js');
 
 const app = express();
 
+app.use('/uploads', express.static('public/uploads'));
 app.use(cors({
     origin: frontendConfig.frontendUrl
 }));
