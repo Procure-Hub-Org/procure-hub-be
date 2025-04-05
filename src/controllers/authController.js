@@ -29,7 +29,7 @@ exports.login = async (req, res) => {
     
     console.log('JWT Secret:', config.jwtSecret);
     
-    // Kreiraj token
+    // Kreiram token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       config.jwtSecret,

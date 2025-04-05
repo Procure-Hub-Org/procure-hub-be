@@ -1,23 +1,26 @@
 const express = require('express');
 const controller = require('../controllers/controller');
+const db = require('../../database/models'); 
 const { User } = require('../../database/models'); 
+const { verifyToken, isAdmin } = require('../middleware/authMiddleware'); // Dodaj ovu liniju
 const router = express.Router();
 
-router.patch('/users/:id/approve', controller.approveUser);
-router.delete('/users/:id', controller.deleteUser);
-router.patch('/users/:id/suspend', controller.suspendUser);
+// Ovdje je middleware za autentikaciju i autorizaciju
+router.patch('/users/:id/approve', verifyToken, isAdmin, controller.approveUser);
+router.delete('/users/:id', verifyToken, isAdmin, controller.deleteUser);
+router.patch('/users/:id/suspend', verifyToken, isAdmin, controller.suspendUser);
 
-// ispis postojecih usera
-router.get('/users', async (req, res) => {
-  try {
-    const users = await User.findAll({
-      attributes: { exclude: ['password_hash'] }
-    });
-    res.status(200).json({ users });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// ispis postojecih usera (također zaštićeno za admine)
+router.get('/users', verifyToken, isAdmin, async (req, res) => {
+    try {
+      const users = await db.User.findAll({
+        attributes: { exclude: ['password_hash'] }
+      });
+      res.status(200).json({ users });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
 module.exports = router;
