@@ -8,10 +8,10 @@ const updateProfile = async (req, res) => {
         const updateInfo = req.body;
 
         if (req.files?.profile_picture) {
-             updateInfo.profile_picture = req.files.profile_picture[0].path; 
+             updateInfo.profile_picture = `uploads/${req.files.profile_picture[0].filename}`;
         }
         if (req.files?.company_logo) {
-            updateInfo.company_logo = req.files.company_logo[0].path; 
+            updateInfo.company_logo = `uploads/${req.files.company_logo[0].filename}`;
         }
         
         const updatedUser = await userService.updateUserProfile(userId, updateInfo);
@@ -24,4 +24,19 @@ const updateProfile = async (req, res) => {
     }
 }
 
-module.exports = { updateProfile };
+const getProfile = async (req, res) => {
+    try {
+      const user = req.user;
+  
+      const { password_hash, suspended_at, approved_at, admin_id, updated_at, created_at, createdAt, updatedAt, ...safeUser } = user.dataValues;
+      
+      res.status(200).json({ user: safeUser });
+  
+      res.status(200).json({ user: safeUser });
+    } catch (error) {
+      console.error('Failed to get profile:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+
+module.exports = { updateProfile, getProfile };

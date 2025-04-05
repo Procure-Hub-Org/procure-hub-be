@@ -2,7 +2,7 @@ const userRepository = require("../repositories/userRepository");
 
 const updateUserProfile = async (userId, updateInfo) => {
 
-    // Filter the update information to only allowed fields
+    // Dozvoljena polja za setup
     const allowedFields = [
         "first_name", "last_name", "phone_number",
         "address", "company_name", "bio", "company_address"
@@ -15,7 +15,7 @@ const updateUserProfile = async (userId, updateInfo) => {
         }
     });
 
-    // Handle profile picture if it's uploaded
+    // Ukoliko se promijeni slika
     if (updateInfo.profile_picture) {
         filteredUpdate.profile_picture = updateInfo.profile_picture;
     }
