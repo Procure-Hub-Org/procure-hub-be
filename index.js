@@ -4,7 +4,8 @@ const serverConfig = require('./src/config/server');
 const frontendConfig = require('./src/config/frontend');
 const userRoutes = require('./src/routes/userRoutes.js'); 
 const adminUserRoutes = require('./src/routes/routes.js'); 
-const authRoutes = require('./src/routes/authRoutes.js'); // Dodaj ovu liniju
+const authRoutes = require('./src/routes/authRoutes.js');
+const adminRoutes = require('./src/routes/adminRoutes.js');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/api', userRoutes); 
 app.use('/api', adminUserRoutes); 
 app.use('/api/auth', authRoutes); 
+app.use('/api',adminRoutes);
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
