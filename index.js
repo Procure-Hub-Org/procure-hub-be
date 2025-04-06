@@ -8,7 +8,6 @@ const authRoutes = require('./src/routes/authRoutes.js'); // Dodaj ovu liniju
 
 const app = express();
 
-app.use('/uploads', express.static('public/uploads'));
 app.use(cors({
     origin: frontendConfig.frontendUrl
 }));
