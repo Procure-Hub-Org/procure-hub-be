@@ -32,7 +32,6 @@ const getProfile = async (req, res) => {
       
       res.status(200).json({ user: safeUser });
   
-      res.status(200).json({ user: safeUser });
     } catch (error) {
       console.error('Failed to get profile:', error);
       res.status(500).json({ error: 'Internal server error' });
