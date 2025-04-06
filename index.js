@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/authRoutes.js'); // Dodaj ovu liniju
 
 const app = express();
 
+// za slike
 app.use('/uploads', express.static('public/uploads'));
 app.use(cors({
     origin: frontendConfig.frontendUrl
@@ -27,7 +28,9 @@ app.listen(serverConfig.port, () => {
     - POST /api/auth/login - User login
     - PATCH /api/users/:id/approve - Approve user (admin only)
     - PATCH /api/users/:id/suspend - Suspend user (admin only)
-    - DELETE /api/users/:id - Delete user (admin only)`);
+    - DELETE /api/users/:id - Delete user (admin only)
+    - PUT /api/user/profile/update - Update user profile
+    - GET /api/user/profile - Get user profile info`);
 });
 
 // Debugging endpoint za testiranje tokena

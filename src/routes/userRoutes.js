@@ -9,12 +9,13 @@ const upload = require("../middleware/uploadMiddleware"); // middleware za uploa
 const { registerValidator } = require('../middleware/userValidator.js');
 
 router.post('/user/register', registerValidator, userController.register);
-router.put("/user/profile", authMiddleware, 
+router.put("/user/profile/update", authMiddleware.verifyToken, 
     upload.fields([
      {name: "profile_picture", maxCount: 1},
      {name: "company_logo", maxCount: 1},
     ]),
     profileController.updateProfile
  );
+router.get("/user/profile", authMiddleware.verifyToken, profileController.getProfile);
 
 module.exports = router;
