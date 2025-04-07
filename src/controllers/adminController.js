@@ -82,35 +82,16 @@ const updateUserByAdmin = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     //provjera da li su poslani neki drugi parametrni -> izmijeniti po potrebi
-    const allowedFields = ['email', 'role']; // Samo email i role se smiju mijenjati
+    const allowedFields = ['role'];
     const invalidFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
     if (invalidFields.length > 0) {
       return res.status(400).json({ error: `You cannot update the following fields: ${invalidFields.join(', ')}` });
     }
-    //provjera da li se email vec koristi 
-    if (email) {
-        const existingUserWithEmail = await db.user.findOne({ where: { email } });
-        if (existingUserWithEmail && existingUserWithEmail.id !== userId) {
-          return res.status(400).json({ error: 'Email is already in use by another user' });
-        }
-    }
-    //provjera ispravnosti email formata
-    if (email && !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
-        return res.status(400).json({ error: 'Invalid email format' });
-      }
-    //provjera d ali je polje role ispravno
+    //provjera da li je polje role ispravno
     if (role && !['admin', 'buyer', 'seller'].includes(role)) {
         return res.status(400).json({ error: 'Role must be one of: admin, buyer, seller' });
       }
-    //po potrebi napraviti izmjenu koje podatke admin moze da mijenja 
-    user.email = email || user.email;
-    //user.first_name = first_name || user.first_name;
-    //user.last_name = last_name || user.last_name;
     user.role = role || user.role;
-    //user.company_name = company_name || user.company_name;
-    //user.phone_number = phone_number || user.phone_number;
-    //user.address = address || user.address;
-    //user.company_address = company_address || user.company_address;
     user.updated_at = new Date();
     await user.save();
     res.status(200).json({ message: 'User updated successfully', user });
