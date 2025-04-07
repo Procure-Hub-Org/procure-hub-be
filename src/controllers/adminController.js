@@ -78,9 +78,12 @@ const updateUserByAdmin = async (req, res) => {
 
     console.log('userId:', userId);
     const user = await db.user.findByPk(userId);
+    
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    /*
     //provjera da li su poslani neki drugi parametrni -> izmijeniti po potrebi
     const allowedFields = ['role'];
     const invalidFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
@@ -94,7 +97,24 @@ const updateUserByAdmin = async (req, res) => {
     user.role = role || user.role;
     user.updated_at = new Date();
     await user.save();
-    res.status(200).json({ message: 'User updated successfully', user });
+    res.status(200).json({ message: 'User updated successfully', user });*/
+
+    let newRole;
+    if(user.role === 'buyer'){
+      newRole = 'seller';
+    }else if (user.role === 'seller') {
+      newRole = 'buyer';
+    } else if (user.role === 'admin') {
+      // Cannot update admin role
+      return res.status(400).json({ error: 'Cannot update admin role' });
+    }
+    
+    user.role = newRole;
+    user.updated_at = new Date();
+    await user.save();
+
+    res.status(200).json({ message: 'User role updated successfully', user });
+
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Internal server error' });
