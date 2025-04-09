@@ -59,7 +59,7 @@ module.exports = {
         allowNull: false,
         defaultValue: 'draft',
         validate: {
-          isIn: [['draft', 'pending_approval', 'needs_changes', 'rejected', 'active', 'closed', 'awarded']],
+          isIn: [['draft', 'active', 'closed', 'awarded']],
         },
       },
       location: {
@@ -75,12 +75,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-      },
-      admin_feedback: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-        comment: 'Admin notes for status changes, like why it needs edits or was rejected.',
-      },
+      }
     });
   },
 

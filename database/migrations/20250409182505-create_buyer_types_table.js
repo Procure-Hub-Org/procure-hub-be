@@ -3,48 +3,35 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('requirements', {
+    await queryInterface.createTable('buyer_types', {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false,
       },
-      procurement_request_id: {
-        type: Sequelize.INTEGER,
+      name: {
+        type: Sequelize.STRING(100),
         allowNull: false,
-        references: {
-          model: 'procurement_requests',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
-      },
-      type: {
-        type: Sequelize.STRING(50),
-        allowNull: false,
-        validate: {
-          isIn: [['technical', 'legal', 'other']],
-        },
+        unique: true,
       },
       description: {
         type: Sequelize.TEXT,
-        allowNull: false,
+        allowNull: true,
       },
       created_at: {
-        allowNull: false,
         type: Sequelize.DATE,
+        allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
       updated_at: {
-        allowNull: false,
         type: Sequelize.DATE,
+        allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
     });
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('requirements');
+    await queryInterface.dropTable('buyer_types');
   }
 };

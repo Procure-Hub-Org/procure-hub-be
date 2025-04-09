@@ -93,12 +93,29 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: 'SET NULL',
       },
+      buyer_type_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'buyer_types',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
     }, 
     {
       tableName: 'users',  
       underscored: true,
-    });;
-  
+    });
+    User.associate = (models) => {
+      User.belongsTo(models.BuyerType, {
+        foreignKey: 'buyer_type_id',
+        as: 'buyerType',
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      });
+    };
     return User;
 };
   
