@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       // A procurement request belongs to a procurement category
       ProcurementRequest.belongsTo(models.ProcurementCategory, {
         foreignKey: 'category_id',
-        as: 'category',
+        as: 'procurementCategory',
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT'
       });
@@ -40,10 +40,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: false
-    },
-    quantity: {
-      type: DataTypes.INTEGER,
       allowNull: false
     },
     deadline: {
@@ -72,6 +68,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     location: {
       type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    documentation: {
+      type: DataTypes.TEXT,
       allowNull: true
     },
     created_at: {

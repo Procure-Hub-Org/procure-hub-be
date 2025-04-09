@@ -3,18 +3,18 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('procurement_requests', {
+    await queryInterface.createTable('procurement_items', {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
         allowNull: false,
       },
-      buyer_id: {
+      procurement_request_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'users',
+          model: 'procurement_requests',
           key: 'id',
         },
         onUpdate: 'CASCADE',
@@ -28,43 +28,9 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false,
       },
-      deadline: {
-        type: Sequelize.DATE,
-        allowNull: false,
-      },
-      budget_min: {
-        type: Sequelize.FLOAT,
-        allowNull: false,
-      },
-      budget_max: {
-        type: Sequelize.FLOAT,
-        allowNull: false,
-      },
-      category_id: {
+      quantity: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        references: {
-          model: 'procurement_categories',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT',
-      },
-      status: {
-        type: Sequelize.STRING(50),
-        allowNull: false,
-        defaultValue: 'draft',
-        validate: {
-          isIn: [['draft', 'active', 'closed', 'awarded']],
-        },
-      },
-      location: {
-        type: Sequelize.STRING(255),
-        allowNull: true,
-      },
-      documentation: {
-        type: Sequelize.TEXT,
-        allowNull: true,
       },
       created_at: {
         allowNull: false,
@@ -80,6 +46,6 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('procurement_requests');
+    await queryInterface.dropTable('procurement_items');
   }
 };
