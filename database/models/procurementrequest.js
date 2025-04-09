@@ -20,7 +20,6 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'RESTRICT'
       });
 
-      // You can add other associations here if needed (e.g., offers, requirements, etc.)
     }
   }
 
