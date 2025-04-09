@@ -21,7 +21,19 @@ module.exports = {
         description: 'Building, maintenance, and repair services',
         created_at: new Date(),
         updated_at: new Date(),
-      }
+      },
+      {
+        name: 'Cleaning Supplies',
+        description: 'Cleaning chemicals, equipment, and janitorial supplies',
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      {
+        name: 'Medical Supplies',
+        description: 'Medical equipment, personal protective equipment (PPE), and health-related supplies',
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
     ]);
   },
 
