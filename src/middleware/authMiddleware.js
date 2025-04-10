@@ -14,7 +14,7 @@ const verifyToken = async (req, res, next) => {
     req.userId = decoded.id;
     
     // Provjeri da li korisnik još uvijek postoji
-    const user = await db.user.findByPk(req.userId);
+    const user = await db.User.findByPk(req.userId);
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }

@@ -23,7 +23,7 @@ exports.register = async (req, res) => {
     } = req.body;
 
     // Provjera da li korisnik sa istim mailom vec postoji
-    const existingUser = await db.user.findOne({ where: { email } });
+    const existingUser = await db.User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         error: 'Email already registered'
@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     // Kreiranje novog korisnika
-    const user = await db.user.create({
+    const user = await db.User.create({
       email,
       password_hash,
       first_name,

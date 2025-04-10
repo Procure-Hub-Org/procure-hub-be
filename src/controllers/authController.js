@@ -9,8 +9,8 @@ exports.login = async (req, res) => {
     
     console.log('Attempting login for:', email);
     
-    // Traži korisnika po emailu - koristi db.user
-    const user = await db.user.findOne({ where: { email } });
+    // Traži korisnika po emailu - koristi db.User
+    const user = await db.User.findOne({ where: { email } });
     
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });

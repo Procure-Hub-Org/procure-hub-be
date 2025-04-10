@@ -12,8 +12,8 @@ router.patch('/users/:id/suspend', verifyToken, isAdmin, controller.suspendUser)
 // ispis postojecih usera (također zaštićeno za admine)
 router.get('/users', verifyToken, isAdmin, async (req, res) => {
     try {
-      // Koristi db.user umjesto db.User
-      const users = await db.user.findAll({
+      // Koristi db.User umjesto db.User
+      const users = await db.User.findAll({
         attributes: { exclude: ['password_hash'] }
       });
       res.status(200).json({ users });

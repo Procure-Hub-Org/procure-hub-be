@@ -38,14 +38,14 @@ const createUserByAdmin = async (req, res) => {
         return res.status(400).json({ error: 'Invalid email format' });
       }
     //provjera da li korisnik vec postoji 
-    const existingUser = await db.user.findOne({ where: { email } });
+    const existingUser = await db.User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
-    const newUser = await db.user.create({
+    const newUser = await db.User.create({
       email,
       password_hash,
       first_name,
@@ -77,7 +77,7 @@ const updateUserByAdmin = async (req, res) => {
     } = req.body;
 
     console.log('userId:', userId);
-    const user = await db.user.findByPk(userId);
+    const user = await db.User.findByPk(userId);
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
