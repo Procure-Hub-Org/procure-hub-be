@@ -20,6 +20,29 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'RESTRICT'
       });
 
+      // A procurement request can have many favorites
+      ProcurementRequest.hasMany(models.Favorite, {
+        foreignKey: 'procurement_request_id',
+        as: 'favorites',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      });
+
+      // A procurement request can have many items
+      ProcurementRequest.hasMany(models.ProcurementItem, {
+        foreignKey: 'procurement_request_id',
+        as: 'items',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      });
+
+      // A procurement request can have many requirements
+      ProcurementRequest.hasMany(models.Requirement, {
+        foreignKey: 'procurement_request_id',
+        as: 'requirements',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      });
     }
   }
 
