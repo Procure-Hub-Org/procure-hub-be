@@ -36,14 +36,14 @@ router.get('/procurement/requests', verifyToken, async (req, res) => {
 
 router.get('/procurement/requests/category/:categoryId', verifyToken, async (req, res) => {
     try {
-      const { category_id } = req.params;
+      const { categoryId } = req.params;
       
       const requests = await db.ProcurementRequest.findAll({
-        where: { category_id },
+        where: { category_id: categoryId },
         include: [
           {
             model: db.User,
-            as: 'buyers',
+            as: 'buyer',
             attributes: ['id', 'first_name', 'last_name', 'company_name']
           },
           {
@@ -61,6 +61,7 @@ router.get('/procurement/requests/category/:categoryId', verifyToken, async (req
       res.status(500).json({ error: error.message });
     }
   });
+  
   
 
 module.exports = router;
