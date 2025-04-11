@@ -63,4 +63,23 @@ router.get('/procurement/requests/category/:categoryId', verifyToken, async (req
     }
   });
 
+
+// Ruta za detalje pojedinačnog zahtjeva
+router.get('/procurement/requests/:id', verifyToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const request = await db.ProcurementRequest.findByPk(id);
+  
+      if (!request) {
+        return res.status(404).json({ error: 'Procurement request not found' });
+      }
+  
+      res.status(200).json({ request });
+    } catch (error) {
+      console.error('Error fetching procurement request details:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
 module.exports = router;
