@@ -34,6 +34,7 @@ router.get('/procurement/requests', verifyToken, async (req, res) => {
   }
 });
 
+// Ruta za filtriranje zahtjeva po kategoriji
 router.get('/procurement/requests/category/:categoryId', verifyToken, async (req, res) => {
     try {
       const { categoryId } = req.params;
@@ -52,7 +53,7 @@ router.get('/procurement/requests/category/:categoryId', verifyToken, async (req
             attributes: ['id', 'name']
           }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['created_at', 'DESC']]
       });
   
       res.status(200).json({ requests });
@@ -61,7 +62,5 @@ router.get('/procurement/requests/category/:categoryId', verifyToken, async (req
       res.status(500).json({ error: error.message });
     }
   });
-  
-  
 
 module.exports = router;
