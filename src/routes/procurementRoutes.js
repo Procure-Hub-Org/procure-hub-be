@@ -34,5 +34,33 @@ router.get('/procurement/requests', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/procurement/requests/category/:categoryId', verifyToken, async (req, res) => {
+    try {
+      const { category_id } = req.params;
+      
+      const requests = await db.ProcurementRequest.findAll({
+        where: { category_id },
+        include: [
+          {
+            model: db.User,
+            as: 'buyers',
+            attributes: ['id', 'first_name', 'last_name', 'company_name']
+          },
+          {
+            model: db.ProcurementCategory,
+            as: 'procurementCategory',
+            attributes: ['id', 'name']
+          }
+        ],
+        order: [['createdAt', 'DESC']]
+      });
+  
+      res.status(200).json({ requests });
+    } catch (error) {
+      console.error('Error fetching procurement requests by category:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
 
 module.exports = router;
