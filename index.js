@@ -35,7 +35,7 @@ app.listen(serverConfig.port, () => {
     - DELETE /api/users/:id - Delete user (admin only)
     - PUT /api/user/profile/update - Update user profile
     - GET /api/user/profile - Get user profile info
-    - GET /procurement-requests - Get procurement requests (sellers only)`);
+    - GET /api/procurement-requests - Get procurement requests (sellers only)`);
 });
 
 // Debugging endpoint za testiranje tokena
