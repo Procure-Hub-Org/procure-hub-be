@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { ProcurementRequest } = require('../../database/models'); 
+const { ProcurementRequest } = require('../../database/models/'); 
 
 const getOpenProcurementRequests = async (req, res) => {
   try {

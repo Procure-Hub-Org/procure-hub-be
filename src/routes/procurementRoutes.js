@@ -1,6 +1,6 @@
 const express = require('express');
 const procurementController = require('../controllers/procurementController.js');
-const { verifyToken, isSeller } = require('../middleware/authMiddleware'); // adjust if your middleware naming differs
+const { verifyToken, isSeller } = require('../middleware/authMiddleware'); 
 
 const router = express.Router();
 
