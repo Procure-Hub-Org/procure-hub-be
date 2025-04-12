@@ -6,11 +6,13 @@ const db = require('../../database/models');
 // Ruta za dohvat svih zahtjeva za nabavku
 router.get('/procurement/requests', verifyToken, async (req, res) => {
   try {
+    console.log('Fetching procurement requests...');
     const requests = await db.ProcurementRequest.findAll({
       include: [
         {
           model: db.User,
           as: 'buyer',
+          foreignKey: 'buyer_id',  
           attributes: ['id', 'first_name', 'last_name', 'company_name', 'email']
         },
         {
