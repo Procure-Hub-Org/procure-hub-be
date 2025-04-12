@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/authRoutes.js');
 const adminRoutes = require('./src/routes/adminRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRoutes');
 const categoryRoutes = require('./src/routes/categoryRoutes');
+const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api',adminRoutes);
 app.use('/api', procurementRoutes);
 app.use('/api', categoryRoutes);
+app.use('/api', buyerTypeRoutes);
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -37,6 +39,8 @@ app.listen(serverConfig.port, () => {
     - DELETE /api/users/:id - Delete user (admin only)
     - PUT /api/user/profile/update - Update user profile
     - GET /api/user/profile - Get user profile info
+    -GET /api/buyer_types - Get all buyer types
+    -POST /api/buyer_types - Create buyer type
     - GET /api/procurement-requests - Get procurement requests (sellers only)
     - GET /api/procurement-categories - Get all categories`);
 });
