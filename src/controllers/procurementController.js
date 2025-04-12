@@ -1,11 +1,14 @@
 const { Op } = require('sequelize');
-const { ProcurementRequest, ProcurementCategory  } = require('../../database/models/'); 
+const { ProcurementRequest, ProcurementCategory, User} = require('../../database/models/'); 
 
 const getOpenProcurementRequests = async (req, res) => {
   try {
     const filters = { status: "active" };    
     const { category_id, deadline, buyer_id, location, budget_min,budget_max } = req.query;
     
+    
+  
+
     if (category_id) {
       filters.category_id = category_id;
     }
@@ -50,17 +53,26 @@ const getOpenProcurementRequests = async (req, res) => {
           model: ProcurementCategory,
           attributes: ['name'],
           as: 'procurementCategory'
-        }
+        },
+        {
+          model: User,
+          attributes: ['id', 'role'],
+          as: 'buyer', 
+          where: {
+              role: 'buyer' 
+          }
+      }
       ],
     });
 
     // Dodavanje category_name svakom requestu
     const formattedRequests = requests.map(req => {
-      const { procurementCategory, ...rest } = req.get({ plain: true });
+      const { procurementCategory,buyer, ...rest } = req.get({ plain: true });
     
       return {
         ...rest,
-        category_name: procurementCategory?.name || null
+        category_name: procurementCategory?.name || null,
+        buyer_role: buyer?.role || null 
       };
     });
     
