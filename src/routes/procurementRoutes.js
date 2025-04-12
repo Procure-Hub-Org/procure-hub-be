@@ -3,8 +3,12 @@ const router = express.Router();
 const procurementController = require('../controllers/procurementRequestController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-
 // kreiranje zahtjeva za nabavku
-router.post('/procurement/create-procurement', verifyToken, procurementController.createProcurementRequest);
+router.post('/procurement/create', verifyToken, procurementController.createProcurementRequest);
 
+//PUT route to update procurement request status
+router.put('/procurement/:id/status',verifyToken, procurementController.updateProcurementRequestStatus);
+
+//PUT route to update procurement request 
+router.put('/procurement/:id/update',verifyToken, procurementController.updateProcurementRequest);
 module.exports = router;
