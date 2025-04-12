@@ -23,7 +23,9 @@ module.exports = {
         requirements,
         documentation, // Ovdje uzimamo URL iz tijela zahtjeva
       } = req.body;
-
+      const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
+      const requirementsParsed = requirements ? (typeof requirements === 'string' ? JSON.parse(requirements) : requirements) : [];
+      
       const categoryData = await ProcurementCategory.findOne({ where: { name: category } });
       if (!categoryData) {
         return res.status(400).json({ message: 'Invalid category' });
@@ -31,7 +33,7 @@ module.exports = {
       const categoryId = categoryData.id;
 
       // Ako postoji URL za dokumentaciju, koristimo ga, inače null
-      const documentationUrl = documentation || null;
+      const documentPath = req.file ? req.file.path : null;
 
       // Ako je status 'active', sve mora biti popunjeno
       if (status === 'active') {
@@ -56,8 +58,8 @@ module.exports = {
         return res.status(400).json({ message: 'Procurement request cannot be created with status closed or awarded' }); 
       }
       //provjera validnosti za requirements type
-      if (requirements) {
-        for (let req of requirements) {
+      if (requirementsParsed) {
+        for (let req of requirementsParsed) {
           if (req.type !== 'technical' && req.type !== 'legal' && req.type !== 'Legal' && req.type !== 'Technical') {
             return res.status(400).json({ message: 'Invalid requirement type. Must be either "technical" or "legal".' });
           }
@@ -77,14 +79,14 @@ module.exports = {
         category_id: categoryId,
         status,
         location,
-        documentation: documentationUrl, // Pohranjujemo URL dokumentacije
+        documentation: documentPath, // Pohranjujemo URL dokumentacije
         created_at,
         updated_at,
       });
       //mora postojati barem jedan item
-      if (items && items.length > 0) {
+      if (itemsParsed && itemsParsed.length > 0) {
         await ProcurementItem.bulkCreate(
-          items.map((item) => ({
+          itemsParsed.map((item) => ({
             procurement_request_id: procurementRequest.id,
             title: item.title,
             description: item.description,
@@ -93,14 +95,14 @@ module.exports = {
             updated_at,
           }))
         );
-      }else{
+      } else {
         return res.status(400).json({ message: 'At least one item must be provided' });
       }
 
       // Dodavanje zahtjeva ako postoje
-      if (requirements && requirements.length > 0) {
+      if (requirementsParsed && requirementsParsed.length > 0) {
         await Requirement.bulkCreate(
-          requirements.map((requirement) => ({
+          requirementsParsed.map((requirement) => ({
             procurement_request_id: procurementRequest.id,
             type: requirement.type,
             description: requirement.description,
@@ -144,18 +146,18 @@ module.exports = {
         return res.status(403).json({ message: 'You are not authorized to change the status of this procurement' });
       }
 
-    //if the current status is the same as new status no need to update
-    if (procurementRequest.status === status) {
-      return res.status(400).json({ message: 'Status is already set to the requested value' });
-    }
-    //check if the status can be changed from current status to new status
-    if (procurementRequest.status === 'draft' && status != 'active') {
-      return res.status(400).json({ message: 'Status from draft can only be changed to active' });
-    }if (procurementRequest.status === 'active' && status != 'awarded' && status != 'closed') {
-      return res.status(400).json({ message: 'Status from active can only be change to awarded or closed' });
-    }if(procurementRequest.status === 'awarded' || procurementRequest.status === 'closed'){
-      return res.status(400).json({ message: 'Status cannot be changed from awarded or closed' });
-    }
+      //if the current status is the same as new status no need to update
+      if (procurementRequest.status === status) {
+        return res.status(400).json({ message: 'Status is already set to the requested value' });
+      }
+      //check if the status can be changed from current status to new status
+      if (procurementRequest.status === 'draft' && status != 'active') {
+        return res.status(400).json({ message: 'Status from draft can only be changed to active' });
+      }if (procurementRequest.status === 'active' && status != 'awarded' && status != 'closed') {
+        return res.status(400).json({ message: 'Status from active can only be change to awarded or closed' });
+      }if(procurementRequest.status === 'awarded' || procurementRequest.status === 'closed'){
+        return res.status(400).json({ message: 'Status cannot be changed from awarded or closed' });
+      }
       //update the status to newStatus
       procurementRequest.status = status;
       procurementRequest.updated_at = new Date();
@@ -231,6 +233,8 @@ module.exports = {
           }
         }
       }
+      // Ako postoji URL za dokumentaciju, koristimo ga, inače null
+      const documentPath = req.file ? req.file.path : null;
       //update procurement request fields
       procurementRequest.title = title || procurementRequest.title;
       procurementRequest.description = description || procurementRequest.description;
@@ -240,16 +244,19 @@ module.exports = {
       procurementRequest.category_id = categoryData.id;
       procurementRequest.status = status || procurementRequest.status;
       procurementRequest.location = location || procurementRequest.location;
-      procurementRequest.documentation = documentation || procurementRequest.documentation;
+      procurementRequest.documentation = documentPath || procurementRequest.documentation;
       procurementRequest.updated_at = new Date();
   
       await procurementRequest.save();
   
+      const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
+      const requirementsParsed = requirements ? (typeof requirements === 'string' ? JSON.parse(requirements) : requirements) : [];
+
       //delete old items and create new ones
-      if (items) {
+      if (itemsParsed.length > 0) {
         await ProcurementItem.destroy({ where: { procurement_request_id: procurementId } });
         await ProcurementItem.bulkCreate(
-          items.map(item => ({
+          itemsParsed.map(item => ({
             procurement_request_id: procurementId,
             title: item.title,
             description: item.description,
@@ -259,11 +266,12 @@ module.exports = {
           }))
         );
       }
-      //delete the old requirements and create new ones
-      if (requirements) {
-        await Requirement.destroy({ where: { procurement_request_id: procurementId } });
+
+      //delete old requirements and create new ones
+      await Requirement.destroy({ where: { procurement_request_id: procurementId } });
+      if (requirementsParsed.length > 0) {
         await Requirement.bulkCreate(
-          requirements.map(req => ({
+          requirementsParsed.map(req => ({
             procurement_request_id: procurementId,
             type: req.type,
             description: req.description,
