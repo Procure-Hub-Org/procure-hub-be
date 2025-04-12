@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { ProcurementRequest } = require('../../database/models/'); 
+const { ProcurementRequest, ProcurementCategory  } = require('../../database/models/'); 
 
 const getOpenProcurementRequests = async (req, res) => {
   try {
@@ -17,6 +17,19 @@ const getOpenProcurementRequests = async (req, res) => {
         [Op.iLike]: `%${location}%`,
       };
     }
+
+    // Dohvati sve kategorije u mapi
+    const categories = await ProcurementCategory.findAll({
+      attributes: ['id', 'name'],
+      raw: true,
+    });
+
+    const categoryMap = {};
+    categories.forEach(cat => {
+      categoryMap[cat.id] = cat.name;
+    });
+
+
     // Ako postoji deadline konvertiraj u Date 
     if (deadline) {
       filters.deadline = { [Op.gte]: new Date(deadline) };
@@ -29,11 +42,31 @@ const getOpenProcurementRequests = async (req, res) => {
       filters.budget_max = { [Op.gte]: Number(req.query.budget_max) };
     }
 
+    // Dohvatanje svih zahtjeva
     const requests = await ProcurementRequest.findAll({
       where: filters,
+      include: [
+        {
+          model: ProcurementCategory,
+          attributes: ['name'],
+          as: 'procurementCategory'
+        }
+      ],
+    });
+
+    // Dodavanje category_name svakom requestu
+    const formattedRequests = requests.map(req => {
+      const { procurementCategory, ...rest } = req.get({ plain: true });
+    
+      return {
+        ...rest,
+        category_name: procurementCategory?.name || null
+      };
     });
     
-    res.status(200).json({ success: true, data: requests });
+    
+    
+    res.status(200).json({ success: true, data: formattedRequests });
     
   } catch (error) {
     console.error('Failed to fetch open procurement requests:', error);
