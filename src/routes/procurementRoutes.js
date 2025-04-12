@@ -101,4 +101,18 @@ router.get('/procurement/requests/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Ruta za dohvat svih kategorija nabave (sortiranih po nazivu)
+router.get('/procurement/categories', verifyToken, async (req, res) => {
+  try {
+    const categories = await db.ProcurementCategory.findAll({
+      order: [['name', 'ASC']]
+    });
+    
+    res.status(200).json({ categories });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
