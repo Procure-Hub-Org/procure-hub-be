@@ -7,12 +7,13 @@ const db = require('../../database/models');
 router.get('/procurement/requests', verifyToken, async (req, res) => {
   try {
     console.log('Fetching procurement requests...');
-    const requests = await db.ProcurementRequest.findAll({
+    const currentUser = req.user;
+    
+    let queryOptions = {
       include: [
         {
           model: db.User,
           as: 'buyer',
-          foreignKey: 'buyer_id',  
           attributes: ['id', 'first_name', 'last_name', 'company_name', 'email']
         },
         {
@@ -27,7 +28,21 @@ router.get('/procurement/requests', verifyToken, async (req, res) => {
         }
       ],
       order: [['created_at', 'DESC']]
-    });
+    };
+    
+    if (currentUser.role === 'buyer') {
+      queryOptions.where = { buyer_id: currentUser.id };
+      console.log(`Filtering requests for buyer ID: ${currentUser.id}`);
+    } 
+    else if (currentUser.role === 'admin' || currentUser.role === 'seller') {
+      // ovo ja i Medin trebamo kasnije vidjet tj ubaciti onu njegovu liniju ovdje
+      // svakako radimo u istom fajlu
+      console.log(`Nije moj task apperently. Ako se treba negdje drugo impl izbrisati ovo`);
+    } else {
+      return res.status(403).json({ error: 'Unauthorized access to procurement requests' });
+    }
+    
+    const requests = await db.ProcurementRequest.findAll(queryOptions);
 
     res.status(200).json({ requests });
   } catch (error) {
