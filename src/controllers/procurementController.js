@@ -13,7 +13,9 @@ const getOpenProcurementRequests = async (req, res) => {
       filters.buyer_id = buyer_id;
     }
     if (location) {
-      filters.location = location;
+      filters.location = {
+        [Op.iLike]: `%${location}%`,
+      };
     }
     // Ako postoji deadline konvertiraj u Date 
     if (deadline) {
@@ -26,7 +28,7 @@ const getOpenProcurementRequests = async (req, res) => {
     if (budget_max) {
       filters.budget_max = { [Op.gte]: Number(req.query.budget_max) };
     }
- 
+
     const requests = await ProcurementRequest.findAll({
       where: filters,
     });

@@ -7,7 +7,7 @@ const adminUserRoutes = require('./src/routes/routes.js');
 const authRoutes = require('./src/routes/authRoutes.js');
 const adminRoutes = require('./src/routes/adminRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRoutes');
-const categoryRoutes = require('./routes/categoryRoutes');
+const categoryRoutes = require('./src/routes/categoryRoutes');
 
 const app = express();
 
@@ -38,7 +38,7 @@ app.listen(serverConfig.port, () => {
     - PUT /api/user/profile/update - Update user profile
     - GET /api/user/profile - Get user profile info
     - GET /api/procurement-requests - Get procurement requests (sellers only)
-    - GET /api/categories - Get all categories`);
+    - GET /api/procurement-categories - Get all categories`);
 });
 
 
