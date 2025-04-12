@@ -4,13 +4,13 @@ const { ProcurementRequest } = require('../../database/models');
 const getOpenProcurementRequests = async (req, res) => {
   try {
     const filters = { status: "active" };    
-    const { category, deadline, buyerType, location, budget_min,budget_max } = req.query;
+    const { category_id, deadline, buyer_id, location, budget_min,budget_max } = req.query;
     
-    if (category) {
-      filters.category = category;
+    if (category_id) {
+      filters.category_id = category_id;
     }
-    if (buyerType) {
-      filters.buyerType = buyerType;
+    if (buyer_id) {
+      filters.buyer_id = buyer_id;
     }
     if (location) {
       filters.location = location;
