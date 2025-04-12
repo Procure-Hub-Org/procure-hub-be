@@ -36,44 +36,44 @@ router.get('/procurement/requests', verifyToken, async (req, res) => {
 
 // Ruta za filtriranje zahtjeva po kategoriji
 router.get('/procurement/requests/category/:categoryId', verifyToken, async (req, res) => {
-    try {
-      const { categoryId } = req.params;
-      
-      const requests = await db.ProcurementRequest.findAll({
-        where: { category_id: categoryId },
-        include: [
-          {
-            model: db.User,
-            as: 'buyer',
-            attributes: ['id', 'first_name', 'last_name', 'company_name']
-          },
-          {
-            model: db.ProcurementCategory,
-            as: 'procurementCategory',
-            attributes: ['id', 'name']
-          }
-        ],
-        order: [['created_at', 'DESC']]
-      });
-  
-      res.status(200).json({ requests });
-    } catch (error) {
-      console.error('Error fetching procurement requests by category:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
+  try {
+    const { categoryId } = req.params;
+    
+    const requests = await db.ProcurementRequest.findAll({
+      where: { category_id: categoryId },
+      include: [
+        {
+          model: db.User,
+          as: 'buyer',
+          attributes: ['id', 'first_name', 'last_name', 'company_name']
+        },
+        {
+          model: db.ProcurementCategory,
+          as: 'procurementCategory',
+          attributes: ['id', 'name']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
 
+    res.status(200).json({ requests });
+  } catch (error) {
+    console.error('Error fetching procurement requests by category:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Ruta za detalje pojedinačnog zahtjeva
 router.get('/procurement/requests/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-
+    
     const request = await db.ProcurementRequest.findByPk(id, {
       include: [
         {
           model: db.User,
-          attributes: ['id', 'first_name', 'last_name'] 
+          as: 'buyer',
+          attributes: ['id', 'first_name', 'last_name', 'company_name', 'email', 'phone_number']
         },
         {
           model: db.ProcurementCategory,
@@ -101,5 +101,4 @@ router.get('/procurement/requests/:id', verifyToken, async (req, res) => {
   }
 });
 
-  
 module.exports = router;
