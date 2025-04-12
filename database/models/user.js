@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
 
       // User can have many procurement requests
       User.hasMany(models.ProcurementRequest, {
-        foreignKey: 'user_id',
+        foreignKey: 'buyer_id',
         as: 'procurementRequests',
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
