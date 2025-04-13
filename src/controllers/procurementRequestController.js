@@ -63,11 +63,12 @@ exports.getOpenProcurementRequests = async (req, res) => {
       }
       // Ako postoji budzet, konvertiraj u Number
       if (budget_min) {
-        filters.budget_min = { [Op.lte]: Number(req.query.budget_min) };
+        filters.budget_max = { [Op.gte]: Number(budget_min) }; // jer želimo da max pokriva korisnikov minimalni budžet
       }
       if (budget_max) {
-        filters.budget_max = { [Op.gte]: Number(req.query.budget_max) };
+        filters.budget_min = { [Op.lte]: Number(budget_max) }; // jer želimo da min pokriva korisnikov maksimalni budžet
       }
+       
   
       const requests = await ProcurementRequest.findAll({
         where: filters,
