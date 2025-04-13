@@ -59,14 +59,14 @@ exports.getOpenProcurementRequests = async (req, res) => {
   
       // Ako postoji deadline konvertiraj u Date 
       if (deadline) {
-        filters.deadline = { [Op.gte]: new Date(deadline) };
+        filters.deadline = { [Op.lte]: new Date(deadline) };
       }
       // Ako postoji budzet, konvertiraj u Number
       if (budget_min) {
-        filters.budget_max = { [Op.gte]: Number(budget_min) }; // jer želimo da max pokriva korisnikov minimalni budžet
+        filters.budget_max = { [Op.gte]: Number(budget_min) }; 
       }
       if (budget_max) {
-        filters.budget_min = { [Op.lte]: Number(budget_max) }; // jer želimo da min pokriva korisnikov maksimalni budžet
+        filters.budget_min = { [Op.lte]: Number(budget_max) }; 
       }
        
   
