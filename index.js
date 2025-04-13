@@ -44,7 +44,10 @@ app.listen(serverConfig.port, () => {
     - POST /api/buyer_types - Create buyer type
     - GET /api/procurement-requests - Get procurement requests (sellers only)
     - GET /api/procurement-categories - Get all categories
-    - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)`);
+    - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)
+    - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
+    - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
+    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)`);
 });
 
 
