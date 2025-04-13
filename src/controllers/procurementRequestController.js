@@ -27,7 +27,7 @@ exports.getBuyerProcurementRequests = async (req, res) => {
 exports.getOpenProcurementRequests = async (req, res) => {
     try {
       const filters = { status: "active" };    
-      const { category_id, deadline, buyer_id, location, budget_min,budget_max } = req.query;
+      const { category_id, deadline, buyer_id, location, budget_min,budget_max,buyer_type_name } = req.query;
   
       if (category_id) {
         filters.category_id = category_id;
@@ -51,6 +51,10 @@ exports.getOpenProcurementRequests = async (req, res) => {
       categories.forEach(cat => {
         categoryMap[cat.id] = cat.name;
       });
+
+      const buyerTypeFilter = buyer_type_name
+      ? { name: { [Op.iLike]: `%${buyer_type_name}%` } }
+      : undefined;
   
   
       // Ako postoji deadline konvertiraj u Date 
@@ -77,18 +81,17 @@ exports.getOpenProcurementRequests = async (req, res) => {
             model: User,
             attributes: ['id', 'role', 'buyer_type_id', 'first_name', 'last_name'],
             as: 'buyer',
-            where: {
-              role: 'buyer',
-            },
+            where: { role: 'buyer' },
             include: [
               {
                 model: BuyerType,
                 attributes: ['name'],
                 as: 'buyerType',
-              },
-            ],
-          },
-        ],
+                where: buyerTypeFilter,
+              }
+            ]
+          }
+        ]
       });
   
       // Format each request
