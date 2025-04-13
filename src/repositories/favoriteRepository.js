@@ -50,7 +50,8 @@ exports.getFavorites = async (userId) => {
       include: [{
         model: db.ProcurementRequest,
         as: 'procurementRequest'
-      }]
+      }],
+      order: [['created_at', 'DESC']],
     });
     return favorites;
   } catch (error) {

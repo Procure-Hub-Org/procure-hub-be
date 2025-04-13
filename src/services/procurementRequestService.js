@@ -17,5 +17,8 @@ exports.removeFavorite = async (userId, requestId) => {
 };
 
 exports.getFavorites = async (userId) => {
-    return await favoriteRepository.getFavorites(userId);
+    const favorites = await favoriteRepository.getFavorites(userId);
+    const procurementRequests = favorites.map(favorite => favorite.procurementRequest);
+
+    return procurementRequests;
 };
