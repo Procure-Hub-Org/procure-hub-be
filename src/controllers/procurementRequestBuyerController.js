@@ -24,7 +24,7 @@ module.exports = {
         location,
         items,
         requirements,
-        documentation, // Ovdje uzimamo URL iz tijela zahtjeva
+        /*documentation, // Ovdje uzimamo URL iz tijela zahtjeva*/
       } = req.body;
       const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
       const requirementsParsed = requirements ? (typeof requirements === 'string' ? JSON.parse(requirements) : requirements) : [];
@@ -57,8 +57,12 @@ module.exports = {
         return res.status(400).json({ message: 'Minimum and maximum budget cannot be the same' });
       }
       //ne moze se kreirati zahtjev sa statusom closed ili awarded
-      if(status === 'closed' && status !== 'awarded') {
+     { /*if(status === 'closed' && status !== 'awarded') {
         return res.status(400).json({ message: 'Procurement request cannot be created with status closed or awarded' }); 
+      }*/}
+      // Provjera datuma
+      if (deadline < new Date()) {
+        return res.status(400).json({ message: 'Deadline cannot be in the past' }); 
       }
       //provjera validnosti za requirements type
       if (requirementsParsed) {
@@ -229,6 +233,10 @@ module.exports = {
       }
       if (budget_min === budget_max) {
         return res.status(400).json({ message: 'Minimum and maximum budget cannot be the same' });
+      }
+      // check if the date is in the past
+      if (deadline < new Date()) {
+        return res.status(400).json({ message: 'Deadline cannot be in the past' }); 
       }
       //get the category id from the name
       const categoryData = await ProcurementCategory.findOne({ where: { name: category } });

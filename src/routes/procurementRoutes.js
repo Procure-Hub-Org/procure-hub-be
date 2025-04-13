@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const procurementController = require('../controllers/procurementRequestController');
+const procurementController = require('../controllers/procurementRequestBuyerController');
 const { verifyToken } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
