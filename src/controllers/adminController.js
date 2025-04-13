@@ -1,12 +1,15 @@
-const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const db = require('../../database/models');
+const { validationResult } = require("express-validator");
+const bcrypt = require("bcryptjs");
+const db = require("../../database/models");
 console.log("User", db);
+const buyerTypeController = require("./buyerTypeController");
 
 const createUserByAdmin = async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to create users' });
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to create users" });
     }
 
     const errors = validationResult(req);
@@ -15,32 +18,52 @@ const createUserByAdmin = async (req, res) => {
     }
 
     const {
-      email, password, first_name, last_name,
-      role, company_name, phone_number, address, company_address
+      email,
+      password,
+      first_name,
+      last_name,
+      role,
+      company_name,
+      phone_number,
+      address,
+      company_address,
+      buyer_type,
     } = req.body;
     //validacija broja telefona
     if (!/^\+(\d{1,3})\s?(\d{1,15})(\s?\d{1,15})*$/.test(phone_number)) {
-        return res.status(400).json({ error: 'Phone number is not in the correct format' });
+      return res
+        .status(400)
+        .json({ error: "Phone number is not in the correct format" });
     }
     //validacija password-a
     if (
-        password.length < 8 ||
-        !/[A-Z]/.test(password) ||
-        !/\d/.test(password) ||
-        !/[\W_]/.test(password)
-      ) {
-        return res.status(400).json({
-          error: 'Password must be at least 8 characters long, contain one uppercase letter, one number, and one special character'
-        });
-      }
-      //provjera ispravnosti email formata
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/\d/.test(password) ||
+      !/[\W_]/.test(password)
+    ) {
+      return res.status(400).json({
+        error:
+          "Password must be at least 8 characters long, contain one uppercase letter, one number, and one special character",
+      });
+    }
+    //provjera ispravnosti email formata
     if (email && !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
-        return res.status(400).json({ error: 'Invalid email format' });
-      }
-    //provjera da li korisnik vec postoji 
+      return res.status(400).json({ error: "Invalid email format" });
+    }
+    //provjera da li korisnik vec postoji
     const existingUser = await db.User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ error: "Email already registered" });
+    }
+
+    let buyerType = null;
+    if (role === "buyer" && buyer_type) {
+      buyerType = await buyerTypeController.findBuyerTypeByName(buyer_type);
+      // console.log("BuyerType", buyerType);
+      if (!buyerType) {
+        buyerType = await db.BuyerType.create({ name: buyer_type });
+      }
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -55,32 +78,43 @@ const createUserByAdmin = async (req, res) => {
       phone_number: phone_number !== undefined ? phone_number : null,
       address: address !== undefined ? address : null,
       company_address: company_address !== undefined ? company_address : null,
-      status: 'pending', //po potrebe izmijeniti i ovo ukoliko admin moze odma status mijenjati
-      created_at: new Date()
+      buyer_type_id: buyerType ? buyerType.id : null,
+      status: "pending", //po potrebe izmijeniti i ovo ukoliko admin moze odma status mijenjati
+      created_at: new Date(),
     });
-    return res.status(201).json({ message: 'User created successfully', user: newUser });
+    return res
+      .status(201)
+      .json({ message: "User created successfully", user: newUser });
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 const updateUserByAdmin = async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'You are not authorized to update users' });
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to update users" });
     }
     const userId = req.params.id;
     const {
-      email, first_name, last_name, role,
-      company_name, phone_number, address, company_address
+      email,
+      first_name,
+      last_name,
+      role,
+      company_name,
+      phone_number,
+      address,
+      company_address,
     } = req.body;
 
-    console.log('userId:', userId);
+    console.log("userId:", userId);
     const user = await db.User.findByPk(userId);
-    
+
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     /*
@@ -100,26 +134,24 @@ const updateUserByAdmin = async (req, res) => {
     res.status(200).json({ message: 'User updated successfully', user });*/
 
     let newRole;
-    if(user.role === 'buyer'){
-      newRole = 'seller';
-    }else if (user.role === 'seller') {
-      newRole = 'buyer';
-    } else if (user.role === 'admin') {
+    if (user.role === "buyer") {
+      newRole = "seller";
+    } else if (user.role === "seller") {
+      newRole = "buyer";
+    } else if (user.role === "admin") {
       // Cannot update admin role
-      return res.status(400).json({ error: 'Cannot update admin role' });
+      return res.status(400).json({ error: "Cannot update admin role" });
     }
-    
+
     user.role = newRole;
     user.updated_at = new Date();
     await user.save();
 
-    res.status(200).json({ message: 'User role updated successfully', user });
-
+    res.status(200).json({ message: "User role updated successfully", user });
   } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 module.exports = { createUserByAdmin, updateUserByAdmin };
-
