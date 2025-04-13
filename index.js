@@ -6,8 +6,9 @@ const userRoutes = require('./src/routes/userRoutes.js');
 const adminUserRoutes = require('./src/routes/routes.js'); 
 const authRoutes = require('./src/routes/authRoutes.js');
 const adminRoutes = require('./src/routes/adminRoutes.js');
-const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
+const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
+const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
 
 const app = express();
 
@@ -24,8 +25,10 @@ app.use('/api', userRoutes);
 app.use('/api', adminUserRoutes); 
 app.use('/api/auth', authRoutes); 
 app.use('/api',adminRoutes);
-app.use('/api/procurement-requests', procurementRoutes);
+app.use('/api', procurementRoutes);
+app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
+app.use('/api', procurementRoutes);
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -37,11 +40,13 @@ app.listen(serverConfig.port, () => {
     - DELETE /api/users/:id - Delete user (admin only)
     - PUT /api/user/profile/update - Update user profile
     - GET /api/user/profile - Get user profile info
-    
-    -GET /api/buyer_types - Get all buyer types
-    -POST /api/buyer_types - Create buyer type`
-  );
+    - GET /api/buyer_types - Get all buyer types
+    - POST /api/buyer_types - Create buyer type
+    - GET /api/procurement-requests - Get procurement requests (sellers only)
+    - GET /api/procurement-categories - Get all categories
+    - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)`);
 });
+
 
 // Debugging endpoint za testiranje tokena
 app.post('/api/debug-token', (req, res) => {
