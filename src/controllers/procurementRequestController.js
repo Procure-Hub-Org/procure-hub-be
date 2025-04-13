@@ -8,6 +8,9 @@ module.exports = {
       if (!user || user.role !== 'buyer') {
         return res.status(403).json({ message: 'You do not have the required role to create a procurement request' });
       }
+      if(user.status !== 'active') {
+        return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
+      }
 
       // Destrukturiranje podataka iz tijela zahtjeva — bez buyer_id!
       const {
@@ -130,6 +133,10 @@ module.exports = {
       const {status} = req.body; //new status
       const userId = req.user.id; 
       console.log("user id", userId)
+      //check if the user status is active
+      if(req.user.status !== 'active') {
+        return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
+      }
       //check if the status is valid
       const validStatuses = ['active', 'closed', 'draft', 'awarded'];
       if (!validStatuses.includes(status)) {
@@ -196,6 +203,9 @@ module.exports = {
       //only the buyer who created this procurement request can update it
       if (procurementRequest.buyer_id !== userId) {
         return res.status(403).json({ message: 'You are not authorized to update this procurement request' });
+      }
+      if(req.user.status !== 'active') {
+        return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
       }
       //check if the new status is valid
       if (status === 'closed' || status === 'awarded') {
