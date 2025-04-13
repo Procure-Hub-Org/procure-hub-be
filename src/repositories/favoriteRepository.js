@@ -49,7 +49,19 @@ exports.getFavorites = async (userId) => {
       where: { user_id: userId },
       include: [{
         model: db.ProcurementRequest,
-        as: 'procurementRequest'
+        as: 'procurementRequest',
+        include: [
+          {
+            model: db.ProcurementCategory,
+            as: 'procurementCategory',
+            attributes: ['name'],
+          },
+          {
+            model: db.User,
+            as: 'buyer',
+            attributes: ['first_name', 'last_name'],
+          },
+        ],
       }],
       order: [['created_at', 'DESC']],
     });

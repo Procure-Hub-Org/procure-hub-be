@@ -24,7 +24,7 @@ exports.getBuyerProcurementRequests = async (buyerId) => {
       plain.procurementCategory = plain.procurementCategory?.name || null;
 
       return plain;
-  });
+    });
 }
 
 exports.addFavorite = async (userId, requestId) => {
@@ -45,7 +45,21 @@ exports.removeFavorite = async (userId, requestId) => {
 
 exports.getFavorites = async (userId) => {
     const favorites = await favoriteRepository.getFavorites(userId);
-    const procurementRequests = favorites.map(favorite => favorite.procurementRequest);
+    if (!favorites) return null;
 
+    const procurementRequests = favorites.map(favorite => {
+        const procurement = favorite.procurementRequest.get({ plain: true });
+        const category_name = procurement.procurementCategory?.name || null;
+        const buyer_full_name = procurement.buyer?.first_name + procurement.buyer?.last_name || null;
+
+        delete procurement.procurementCategory;
+        delete procurement.buyer;
+
+        return {
+          ...procurement,
+          category_name,
+          buyer_full_name
+        };
+    });
     return procurementRequests;
 };
