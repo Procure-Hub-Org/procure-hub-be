@@ -36,7 +36,7 @@ module.exports = {
       const categoryId = categoryData.id;
 
       // Ako postoji URL za dokumentaciju, koristimo ga, inače null
-      const documentPath = req.file ? req.file.path : null;
+      //const documentPath = req.file ? req.file.path : null;
 
       // Ako je status 'active', sve mora biti popunjeno
       if (status === 'active') {
@@ -86,7 +86,7 @@ module.exports = {
         category_id: categoryId,
         status,
         location,
-        documentation: documentPath, // Pohranjujemo URL dokumentacije
+        documentation: null,//documentPath, // Pohranjujemo URL dokumentacije
         created_at,
         updated_at,
       });
@@ -252,7 +252,7 @@ module.exports = {
         }
       }
       // Ako postoji URL za dokumentaciju, koristimo ga, inače null
-      const documentPath = req.file ? req.file.path : null;
+      //const documentPath = req.file ? req.file.path : null;
       //update procurement request fields
       procurementRequest.title = title || procurementRequest.title;
       procurementRequest.description = description || procurementRequest.description;
@@ -262,7 +262,7 @@ module.exports = {
       procurementRequest.category_id = categoryData.id;
       procurementRequest.status = status || procurementRequest.status;
       procurementRequest.location = location || procurementRequest.location;
-      procurementRequest.documentation = documentPath || procurementRequest.documentation;
+      procurementRequest.documentation = null;//documentPath || procurementRequest.documentation;
       procurementRequest.updated_at = new Date();
   
       await procurementRequest.save();
@@ -308,4 +308,31 @@ module.exports = {
       return res.status(500).json({ message: 'Something went wrong', error: error.message });
     }
   },  
+
+  getProcurementRequestDetails: async (req, res) => {
+    try{
+      const procurementId = req.params.id;
+      const procurementRequest = await ProcurementRequest.findOne({
+        where: { id: procurementId },
+        include: [
+          { model: ProcurementItem, as: 'items' },
+          { model: Requirement, as: 'requirements' },
+          { 
+            model: ProcurementCategory, 
+            as: 'procurementCategory', 
+            attributes: ['name'],
+          },
+        ]
+      });
+      
+      if (!procurementRequest) {
+        return res.status(404).json({ message: 'Procurement request not found' });
+      }
+      
+    res.status(200).json(procurementRequest);
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching procurement request' });
+    }
+  },
 };
