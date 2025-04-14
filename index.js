@@ -6,6 +6,7 @@ const userRoutes = require('./src/routes/userRoutes.js');
 const adminUserRoutes = require('./src/routes/routes.js'); 
 const authRoutes = require('./src/routes/authRoutes.js');
 const adminRoutes = require('./src/routes/adminRoutes.js');
+const procurementRoutesBuyer = require('./src/routes/procurementRoutes.js');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
@@ -25,6 +26,7 @@ app.use('/api', userRoutes);
 app.use('/api', adminUserRoutes); 
 app.use('/api/auth', authRoutes); 
 app.use('/api',adminRoutes);
+app.use('/api',procurementRoutesBuyer);
 app.use('/api', procurementRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
@@ -40,6 +42,9 @@ app.listen(serverConfig.port, () => {
     - DELETE /api/users/:id - Delete user (admin only)
     - PUT /api/user/profile/update - Update user profile
     - GET /api/user/profile - Get user profile info
+    - POST /api/procurement/create - Create a new procurement request
+    - PUT /api/procurement/:id/status - Update procurement request status
+    - PUT /api/procurement/:id/update - Update procurement request
     - GET /api/buyer_types - Get all buyer types
     - POST /api/buyer_types - Create buyer type
     - GET /api/procurement-requests - Get procurement requests (sellers only)
