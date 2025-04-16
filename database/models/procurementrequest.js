@@ -43,6 +43,30 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       });
+
+      // A procurement request can have many bids
+      ProcurementRequest.hasMany(models.ProcurementBid, {
+        foreignKey: 'procurement_request_id',
+        as: 'procurementBids',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      });
+
+      // A procurement request can have many admin alerts
+      ProcurementRequest.hasMany(models.AdminAlert, {
+        foreignKey: 'procurement_request_id',
+        as: 'adminAlerts',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      });
+
+      // A procurement request can have many evaluation criteria
+      ProcurementRequest.hasMany(models.EvaluationCriteria, {
+        foreignKey: 'procurement_request_id',
+        as: 'evaluationCriteria',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      });
     }
   }
 
@@ -95,6 +119,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     documentation: {
       type: DataTypes.TEXT,
+      allowNull: true
+    },
+    flagged: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    bid_edit_deadline: {
+      type: DataTypes.DATE,
       allowNull: true
     },
     created_at: {

@@ -34,6 +34,22 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       });
+
+      // User can have many procurement bids
+      User.hasMany(models.ProcurementBid, {
+        foreignKey: 'seller_id',
+        as: 'procurementBids',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
+
+      // User can have many admin logs
+      User.hasMany(models.AdminLog, {
+        foreignKey: 'user_id',
+        as: 'adminLogs',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
     }
   }
 
