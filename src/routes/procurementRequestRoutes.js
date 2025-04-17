@@ -5,6 +5,7 @@ const { verifyToken } = require('../middleware/authMiddleware');
 const procurementRequestController = require('../controllers/procurementRequestController');
 
 router.get('/procurement-requests', verifyToken, procurementRequestController.getOpenProcurementRequests);
+router.get('/procurement-criteria', verifyToken, procurementRequestController.getProcurementCriteria);
 router.get('/procurement-requests/buyer', verifyToken, procurementRequestController.getBuyerProcurementRequests);
 
 

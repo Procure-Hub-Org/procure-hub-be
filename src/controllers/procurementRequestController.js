@@ -145,6 +145,17 @@ exports.getOpenProcurementRequests = async (req, res) => {
                 where: buyerTypeFilter,
               }
             ]
+          },
+          {
+          model: EvaluationCriteria,
+            as: 'evaluationCriteria',
+            include: [
+                {
+                    model: CriteriaType,
+                    as: 'criteriaType',
+                    attributes: ['id', 'name'],
+                }
+            ]
           }
         ]
       });
