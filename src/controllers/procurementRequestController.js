@@ -1,6 +1,6 @@
 const procurementRequestService = require("../services/procurementRequestService");
 const { Op } = require('sequelize');
-const { ProcurementRequest, ProcurementCategory, User, BuyerType} = require('../../database/models/'); 
+const { ProcurementRequest, ProcurementCategory, User, BuyerType,EvaluationCriteria,CriteriaType} = require('../../database/models/'); 
 const { getBuyerTypeById } = require('./buyerTypeController')
 
 exports.follow = async (req, res) => {
@@ -147,14 +147,15 @@ exports.getOpenProcurementRequests = async (req, res) => {
             ]
           },
           {
-          model: EvaluationCriteria,
+            model: EvaluationCriteria,
             as: 'evaluationCriteria',
+            attributes: ['weight'], 
             include: [
-                {
-                    model: CriteriaType,
-                    as: 'criteriaType',
-                    attributes: ['id', 'name'],
-                }
+              {
+                model: CriteriaType,
+                as: 'criteriaType',
+                attributes: ['name'],
+              }
             ]
           }
         ]
@@ -180,4 +181,29 @@ exports.getOpenProcurementRequests = async (req, res) => {
       console.error('Failed to fetch open procurement requests:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
+};
+
+exports.getProcurementCriteria = async (req, res) => {
+  try {
+    const criteria = await EvaluationCriteria.findAll({
+      attributes: ['weight'],
+      include: [
+        {
+          model: CriteriaType,
+          as: 'criteriaType',
+          attributes: ['name']
+        }
+      ]
+    });
+
+    const formatted = criteria.map(c => ({
+      name: c.criteriaType?.name,
+      weight: c.weight
+    }));
+
+    res.status(200).json({ success: true, data: formatted });
+  } catch (error) {
+    console.error('Failed to fetch procurement criteria:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 };
