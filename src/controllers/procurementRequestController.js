@@ -105,7 +105,7 @@ exports.getOpenProcurementRequests = async (req, res) => {
       : undefined;
   
       if (deadline) {
-        filters.deadline = { [Op.lte]: new Date(deadline) };
+        filters.deadline = { [Op.gte]: new Date(deadline) };
       }
 
       if (budget_min) {
