@@ -14,6 +14,9 @@ router.put('/procurement/:id/status',verifyToken, procurementController.updatePr
 //PUT route to update procurement request 
 router.put('/procurement/:id/update',verifyToken, procurementController.updateProcurementRequest);
 
-//GET route to get 
-router.get('/procurement-request/:id',verify, procurementController.getProcurementRequestDetails);
+// GET route to get all details for a specific procurement request
+router.get('/procurement-request/:id',verifyToken, procurementController.getProcurementRequestDetails);
+
+// GET route to get all bids for a specific procurement request
+router.get('/procurement/:id/bids',verifyToken, procurementController.getBidsForProcurement);
 module.exports = router;

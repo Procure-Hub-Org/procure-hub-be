@@ -1,4 +1,4 @@
-const { ProcurementRequest, ProcurementItem, Requirement, ProcurementCategory, User } = require('../../database/models');
+const { ProcurementRequest, ProcurementItem, Requirement, ProcurementCategory, User, ProcurementBid } = require('../../database/models');
 
 module.exports = {
   createProcurementRequest: async (req, res) => {
@@ -334,5 +334,27 @@ module.exports = {
     console.error(error);
     res.status(500).json({ message: 'Error fetching procurement request' });
     }
+  },
+  getBidsForProcurement: async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    try{
+      const procurement = await ProcurementRequest.findOne({where: { id }});
+      if (!procurement) {
+        return res.status(404).json({ message: 'Procurement request not found' });
+      }
+      if(procurement.buyer_id !== userId) {
+        return res.status(403).json({ message: 'You are not authorized to view bids for this procurement request' });
+      }
+      const bids = await ProcurementBid.findAll({where: { procurement_request_id: id }});
+      if (!bids || bids.length === 0) {
+        return res.status(404).json({ message: 'No bids found for this procurement request' });
+      }
+      res.status(200).json(bids);
+    }catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching bids for procurement request' });
+    }
+
   },
 };
