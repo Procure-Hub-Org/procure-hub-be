@@ -11,8 +11,8 @@ router.post('/procurement/create',  verifyToken, procurementController.createPro
 //PUT route to update procurement request status
 router.put('/procurement/:id/status',verifyToken, procurementController.updateProcurementRequestStatus);
 
-//PUT route to update procurement request 
-router.put('/procurement/:id/update',verifyToken, procurementController.updateProcurementRequest);
+//PATCH route to update procurement request 
+router.patch('/procurement/:id/update',verifyToken, procurementController.updateProcurementRequest);
 
 // GET route to get all details for a specific procurement request
 router.get('/procurement-request/:id',verifyToken, procurementController.getProcurementRequestDetails);

@@ -1,7 +1,8 @@
-const { ProcurementRequest, ProcurementItem, Requirement, ProcurementCategory, User, ProcurementBid } = require('../../database/models');
+const { ProcurementRequest, ProcurementItem, Requirement, ProcurementCategory, User, ProcurementBid, CriteriaType, EvaluationCriteria } = require('../../database/models');
 
 module.exports = {
   createProcurementRequest: async (req, res) => {
+    const t = await ProcurementRequest.sequelize.transaction();
     try {
       // Provjera uloge korisnika
       const user = await User.findByPk(req.user.id);
@@ -24,6 +25,7 @@ module.exports = {
         location,
         items,
         requirements,
+        evaluationCriteria,
         /*documentation, // Ovdje uzimamo URL iz tijela zahtjeva*/
       } = req.body;
       const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
@@ -89,7 +91,7 @@ module.exports = {
         documentation: null,//documentPath, // Pohranjujemo URL dokumentacije
         created_at,
         updated_at,
-      });
+      },{ transaction: t });
       //mora postojati barem jedan item
       if (itemsParsed && itemsParsed.length > 0) {
         await ProcurementItem.bulkCreate(
@@ -100,7 +102,7 @@ module.exports = {
             quantity: item.quantity,
             created_at,
             updated_at,
-          }))
+          })),{ transaction: t }
         );
       } else {
         return res.status(400).json({ message: 'At least one item must be provided' });
@@ -115,10 +117,42 @@ module.exports = {
             description: requirement.description,
             created_at,
             updated_at,
-          }))
+          })),{ transaction: t }
         );
       }
+      const evaluationParsed = evaluationCriteria ? (typeof evaluationCriteria === 'string' ? JSON.parse(evaluationCriteria) : evaluationCriteria) : [];
 
+      if (evaluationParsed && evaluationParsed.length > 0) {
+        let totalWeight = 0;
+        const evaluationEntries = [];
+
+        for (let criteria of evaluationParsed) {
+          const criteriaType = await CriteriaType.findOne({ where: { name: criteria.name } });
+          if (!criteriaType) {
+            return res.status(400).json({ message: `Invalid criteria type: ${criteria.name}` });
+          }
+          const weight = parseFloat(criteria.weight);
+          if (isNaN(weight) || weight < 0 || weight > 100) {
+            return res.status(400).json({ message: `Invalid weight for criteria: ${criteria.name}` });
+          }
+          totalWeight += weight;
+          evaluationEntries.push({
+            procurement_request_id: procurementRequest.id,
+            criteria_type_id: criteriaType.id,
+            weight: weight,
+            is_must_have: criteria.is_must_have === true || criteria.is_must_have === 'true',
+            created_at,
+            updated_at,
+          });
+        }
+
+        if (totalWeight !== 100) {
+          return res.status(400).json({ message: 'Total weight of all evaluation criteria must be exactly 100%' });
+        }
+
+        await EvaluationCriteria.bulkCreate(evaluationEntries,{ transaction: t });
+      }
+      await t.commit(); 
       // Vraćanje odgovora
       res.status(201).json({
         message: 'Procurement request created successfully',
@@ -187,7 +221,6 @@ module.exports = {
     }
   },
 
-
   updateProcurementRequest: async (req, res) => {
     try {
       const procurementId = req.params.id;
@@ -203,116 +236,154 @@ module.exports = {
         location,
         items,
         requirements,
-        documentation,
       } = req.body;
   
       const procurementRequest = await ProcurementRequest.findOne({ where: { id: procurementId } });
       if (!procurementRequest) {
         return res.status(404).json({ message: 'Procurement request not found' });
       }
-      //only the buyer who created this procurement request can update it
+  
+      //check if the logged-in user is the buyer who created this procurement request
       if (procurementRequest.buyer_id !== userId) {
         return res.status(403).json({ message: 'You are not authorized to update this procurement request' });
       }
-      if(req.user.status !== 'active') {
-        return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
+      //check if the user is active
+      if (req.user.status !== 'active') {
+        return res.status(403).json({ message: 'Your account is not active' });
       }
-      //check if the new status is valid
-      if (status === 'closed' || status === 'awarded') {
-        return res.status(400).json({ message: 'Cannot set status to closed or awarded through this route' });
+      //this statuses cannot be set through this route
+      if (status && ['closed', 'awarded', 'freezed'].includes(status)) {
+        return res.status(400).json({ message: 'Cannot set status to closed, awarded or freezed through this route' });
       }
-      if (procurementRequest.status != 'draft'){
-        return res.status(400).json({ message: 'Cannot update procurement with status active, update or awarded.' });
+      //only procurements with draftstatus can be updated
+      if (procurementRequest.status !== 'draft') {
+        return res.status(400).json({ message: 'Only procurement requests with draft status can be updated' });
       }
-      //if the new status s active all fields must be filled
+      //if the new status is active all fields must be filled
       if (status === 'active') {
-        if (!title || !description || !deadline || !budget_min || !budget_max || !category || !location || !items || items.length === 0) {
-          return res.status(400).json({message: 'All fields and at least one item are required when setting status to active',});
+        if (!(title || procurementRequest.title) ||!(description || procurementRequest.description) ||!(deadline || procurementRequest.deadline) ||
+          !(budget_min !== undefined || procurementRequest.budget_min !== null) ||!(budget_max !== undefined || procurementRequest.budget_max !== null) ||
+          !(category || procurementRequest.category_id) ||!(location || procurementRequest.location)
+        ) {
+          return res.status(400).json({ message: 'All fields are required when setting status to active' });
         }
-      } 
-      //check if the budget is valid
-      if (budget_min < 0 || budget_max < 0) {
-        return res.status(400).json({ message: 'Budgets cannot be negative' });
+      
+        const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
+        const existingItems = await ProcurementItem.findAll({ where: { procurement_request_id: procurementId } });
+        if (itemsParsed.length === 0 && existingItems.length === 0) {
+          return res.status(400).json({ message: 'At least one item is required when setting status to active' });
+        }
+      }      
+      if (budget_min !== undefined && budget_min < 0) {
+        return res.status(400).json({ message: 'Minimum budget cannot be negative' });
       }
-      if (budget_max < budget_min) {
-        return res.status(400).json({ message: 'Maximum budget cannot be less than minimum budget' });
+  
+      if (budget_max !== undefined && budget_max < 0) {
+        return res.status(400).json({ message: 'Maximum budget cannot be negative' });
       }
-      if (budget_min === budget_max) {
-        return res.status(400).json({ message: 'Minimum and maximum budget cannot be the same' });
+  
+      const finalMin = budget_min !== undefined ? budget_min : procurementRequest.budget_min;
+      const finalMax = budget_max !== undefined ? budget_max : procurementRequest.budget_max;
+  
+      if (finalMin >= finalMax) {
+        return res.status(400).json({ message: 'Minimum budget must be less than maximum budget' });
       }
-      // check if the date is in the past
-      if (deadline < new Date()) {
-        return res.status(400).json({ message: 'Deadline cannot be in the past' }); 
-      }
-      //get the category id from the name
+  
+    //check if the date is in the past
+    if (deadline && new Date(deadline) < new Date()) {
+      return res.status(400).json({ message: 'Deadline cannot be in the past' });
+    }
+    //validation for category
+    let categoryId = procurementRequest.category_id;
+    if (category) {
       const categoryData = await ProcurementCategory.findOne({ where: { name: category } });
       if (!categoryData) {
         return res.status(400).json({ message: 'Invalid category' });
       }
-      //check if all requirements have the valid type
-      if (requirements) {
-        for (let req of requirements) {
-          if (req.type !== 'technical' && req.type !== 'legal' && req.type !== 'Legal' && req.type !== 'Technical') {
-            return res.status(400).json({ message: 'Invalid requirement type. Must be either "technical" or "legal".' });
-          }
-        }
-      }
-      // Ako postoji URL za dokumentaciju, koristimo ga, inače null
-      //const documentPath = req.file ? req.file.path : null;
-      //update procurement request fields
-      procurementRequest.title = title || procurementRequest.title;
-      procurementRequest.description = description || procurementRequest.description;
-      procurementRequest.deadline = deadline || procurementRequest.deadline;
-      procurementRequest.budget_min = budget_min ?? procurementRequest.budget_min;
-      procurementRequest.budget_max = budget_max || procurementRequest.budget_max;
-      procurementRequest.category_id = categoryData.id;
-      procurementRequest.status = status || procurementRequest.status;
-      procurementRequest.location = location || procurementRequest.location;
-      procurementRequest.documentation = null;//documentPath || procurementRequest.documentation;
-      procurementRequest.updated_at = new Date();
-  
-      await procurementRequest.save();
-  
-      const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
-      const requirementsParsed = requirements ? (typeof requirements === 'string' ? JSON.parse(requirements) : requirements) : [];
+      categoryId = categoryData.id;
+    }
+    if (title) procurementRequest.title = title;
+    if (description) procurementRequest.description = description;
+    if (deadline) procurementRequest.deadline = deadline;
+    if (budget_min !== undefined) procurementRequest.budget_min = budget_min;
+    if (budget_max !== undefined) procurementRequest.budget_max = budget_max;
+    if (categoryId) procurementRequest.category_id = categoryId;
+    if (status) procurementRequest.status = status;
+    if (location) procurementRequest.location = location;
+    procurementRequest.updated_at = new Date();
 
-      //delete old items and create new ones
-      if (itemsParsed.length > 0) {
-        await ProcurementItem.destroy({ where: { procurement_request_id: procurementId } });
-        await ProcurementItem.bulkCreate(
-          itemsParsed.map(item => ({
+    await procurementRequest.save();
+    const itemsParsed = items ? (typeof items === 'string' ? JSON.parse(items) : items) : [];
+
+    if (itemsParsed.length > 0) {
+      const existingItems = await ProcurementItem.findAll({ where: { procurement_request_id: procurementId } });
+
+      for (const item of itemsParsed) {
+        if (item.id) {
+          const existingItem = existingItems.find(i => i.id === item.id);
+          if (existingItem) {
+            existingItem.title = item.title || existingItem.title;
+            existingItem.description = item.description || existingItem.description;
+            existingItem.quantity = item.quantity || existingItem.quantity;
+            existingItem.updated_at = new Date();
+            await existingItem.save();
+          } else {
+            return res.status(400).json({ message: `Item ID ${item.id} not found` });
+          }
+        } else {
+          if (!item.title || !item.description || !item.quantity) {
+            return res.status(400).json({ message: 'Title, description and quantity are required for new items' });
+          }
+
+          await ProcurementItem.create({
             procurement_request_id: procurementId,
             title: item.title,
             description: item.description,
             quantity: item.quantity,
             created_at: new Date(),
             updated_at: new Date()
-          }))
-        );
+          });
+        }
       }
+    }
+    const requirementsParsed = requirements ? (typeof requirements === 'string' ? JSON.parse(requirements) : requirements) : [];
 
-      //delete old requirements and create new ones
-      await Requirement.destroy({ where: { procurement_request_id: procurementId } });
-      if (requirementsParsed.length > 0) {
-        await Requirement.bulkCreate(
-          requirementsParsed.map(req => ({
+    if (requirementsParsed.length > 0) {
+      const existingRequirements = await Requirement.findAll({ where: { procurement_request_id: procurementId } });
+
+      for (const req of requirementsParsed) {
+        if (req.id) {
+          const existingReq = existingRequirements.find(r => r.id === req.id);
+          if (existingReq) {
+            if (req.type && !['technical', 'legal'].includes(req.type.toLowerCase())) {
+              return res.status(400).json({ message: 'Requirement type must be "technical" or "legal"' });
+            }
+            existingReq.type = req.type || existingReq.type;
+            existingReq.description = req.description || existingReq.description;
+            existingReq.updated_at = new Date();
+            await existingReq.save();
+          } else {
+            return res.status(400).json({ message: `Requirement ID ${req.id} not found` });
+          }
+        } else {
+          if (!req.type || !req.description) {
+            return res.status(400).json({ message: 'Type and description are required for new requirements' });
+          }
+          await Requirement.create({
             procurement_request_id: procurementId,
             type: req.type,
             description: req.description,
             created_at: new Date(),
             updated_at: new Date()
-          }))
-        );
+          });
+        }
       }
-      return res.status(200).json({
-        message: 'Procurement request updated successfully',
-        procurementRequest
-      });
-  
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: 'Something went wrong', error: error.message });
     }
+    return res.status(200).json({message: 'Procurement request updated successfully',procurementRequest});
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
   },  
 
   getProcurementRequestDetails: async (req, res) => {
