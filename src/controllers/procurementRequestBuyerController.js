@@ -142,7 +142,7 @@ module.exports = {
         return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
       }
       //check if the status is valid
-      const validStatuses = ['active', 'closed', 'draft', 'awarded'];
+      const validStatuses = ['active', 'closed', 'draft', 'awarded', 'freezed'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
       }
@@ -156,19 +156,25 @@ module.exports = {
       if (procurementRequest.buyer_id !== userId) {
         return res.status(403).json({ message: 'You are not authorized to change the status of this procurement' });
       }
-
       //if the current status is the same as new status no need to update
       if (procurementRequest.status === status) {
         return res.status(400).json({ message: 'Status is already set to the requested value' });
       }
-      //check if the status can be changed from current status to new status
-      if (procurementRequest.status === 'draft' && status != 'active') {
-        return res.status(400).json({ message: 'Status from draft can only be changed to active' });
-      }if (procurementRequest.status === 'active' && status != 'awarded' && status != 'closed') {
-        return res.status(400).json({ message: 'Status from active can only be change to awarded or closed' });
-      }if(procurementRequest.status === 'awarded' || procurementRequest.status === 'closed'){
-        return res.status(400).json({ message: 'Status cannot be changed from awarded or closed' });
-      }
+      //allowed status transitions 
+      const allowedTransitions = {
+      draft: ['active'],
+      active: ['closed', 'freezed'],
+      freezed: ['active', 'closed'],
+      closed: ['awarded'],
+    };
+    
+    //get valid next statuses for current status
+    const validNextStatuses = allowedTransitions[procurementRequest.status] || [];
+    
+    //check if the desired new status is allowed
+    if (!validNextStatuses.includes(status)) {
+      return res.status(400).json({ message: `Status cannot be changed from ${procurementRequest.status} to ${status}` });
+    }
       //update the status to newStatus
       procurementRequest.status = status;
       procurementRequest.updated_at = new Date();
