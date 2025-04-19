@@ -154,4 +154,35 @@ const updateUserByAdmin = async (req, res) => {
   }
 };
 
-module.exports = { createUserByAdmin, updateUserByAdmin };
+const getAllProcurementRequestsAsAdmin = async (req, res) => { 
+    try {
+      const [results] = await db.sequelize.query(`
+        SELECT 
+          pr.id,
+          pr.title,
+          pr.description,
+          pr.deadline,
+          pr.flagged,
+          pr.status,
+          pc.name AS category,
+          u.email AS buyerEmail,
+          COUNT(DISTINCT pb.id) AS bids,
+          COUNT(DISTINCT a.id) AS logs
+        FROM procurement_requests pr
+        INNER JOIN procurement_categories pc ON pr.category_id = pc.id
+        INNER JOIN users u ON pr.buyer_id = u.id
+        LEFT JOIN procurement_bids pb ON pb.procurement_request_id = pr.id
+        LEFT JOIN admin_logs a ON a.procurement_bid_id = pb.id
+        GROUP BY pr.id, pr.title, pr.description, pr.deadline, pr.flagged, pr.status, pc.name, u.email
+      `);
+      res.status(200).json(results);
+      
+      
+  }catch (error) {
+  console.error("Error loading procurement requests:", error);
+  res.status(500).json({ error: "Internal server error" });
+  } 
+};
+
+
+module.exports = { createUserByAdmin, updateUserByAdmin, getAllProcurementRequestsAsAdmin };
