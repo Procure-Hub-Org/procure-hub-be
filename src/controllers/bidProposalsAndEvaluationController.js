@@ -7,6 +7,8 @@ const {
     EvaluationCriteria,
     CriteriaType,
   } = require('../../database/models');
+  const { Op } = require('sequelize');
+
   
   const getBidProposals = async (req, res) => {
     try {
@@ -77,7 +79,7 @@ const {
                 criteriaEvaluations.push({
                 criteria: crit?.dataValues.CriteriaType?.name || 'Nema naziva kriterija',
                     score: evaluation.score,
-                    weight: crit ? crit.weight/10 : 'Nema težine'
+                    weight: crit ? `${crit.weight}%`: 'Nema težine'
                 });
             }
         });
@@ -123,5 +125,106 @@ const {
       return res.status(500).json({ message: "Internal server error", error: error.message });
     }
   };
-  module.exports = { getBidProposals };
+  async function evaluateBidCriteria(req, res) {
+    try {
+      const { procurement_bid_id, evaluation_criteria_id, score } = req.body;
+  
+      if (!procurement_bid_id || !evaluation_criteria_id || !score) {
+        return res.status(400).json({ message: 'Missing required fields.' });
+      }
+  
+      if (score < 1 || score > 10 || !Number.isInteger(score)) {
+        return res.status(400).json({ message: 'Score must be an integer between 1 and 10.' });
+      }
+  
+      const bid = await ProcurementBid.findByPk(procurement_bid_id);
+      if (!bid) {
+        return res.status(404).json({ message: 'Bid not found.' });
+      }
+  
+      const procurement = await ProcurementRequest.findOne({
+        where: {
+          id: bid.procurement_request_id,
+          buyer_id: req.user.id
+        }
+      });
+  
+      if (!procurement) {
+        return res.status(403).json({ message: "You are not authorized to evaluate this bid." });
+      }
+  
+      const existing = await BidEvaluation.findOne({
+        where: { procurement_bid_id, evaluation_criteria_id }
+      });
+  
+      if (existing) {
+        return res.status(409).json({ message: 'Evaluation for this criteria already exists.' });
+      }
+  
+      await BidEvaluation.create({ procurement_bid_id, evaluation_criteria_id, score });
+  
+      return res.status(200).json({ message: 'Evaluation recorded successfully.' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Internal server error.' });
+    }
+  }
+  const evaluateFinalScore = async (req, res) => {
+    const { bidId } = req.params;
+  
+    try {
+      const bid = await ProcurementBid.findByPk(bidId);
+      if (!bid) return res.status(404).json({ error: 'Bid not found' });
+  
+      const criteriaList = await EvaluationCriteria.findAll({
+        where: { procurement_request_id: bid.procurement_request_id },
+      });
+  
+      const evaluations = await BidEvaluation.findAll({
+        where: {
+          procurement_bid_id: bidId,
+          evaluation_criteria_id: { [Op.not]: null },
+        },
+      });
+  
+      if (evaluations.length === criteriaList.length) {
+        const weightedSum = evaluations.reduce((acc, evaluation) => {
+          const criterion = criteriaList.find(c => c.id == evaluation.evaluation_criteria_id);
+          return acc + evaluation.score * criterion.weight;
+        }, 0);
+  
+        const finalScore = weightedSum / 100; 
+  
+        const existingAverage = await BidEvaluation.findOne({
+          where: {
+            procurement_bid_id: bidId,
+            evaluation_criteria_id: null,
+          },
+        });
+  
+        if (!existingAverage) {
+          await BidEvaluation.create({
+            procurement_bid_id: bidId,
+            evaluation_criteria_id: null,
+            score: finalScore,
+          });
+  
+          return res.status(200).json({ message: 'Final evaluation score calculated and saved.', score: finalScore });
+        } else {
+          return res.status(200).json({ message: 'Final evaluation already exists.', score: existingAverage.score });
+        }
+      } else {
+        return res.status(400).json({ message: 'Not all criteria have been evaluated yet.' });
+      }
+    } catch (err) {
+      console.error("Error during final evaluation:", err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+  
+  module.exports = {
+    getBidProposals,
+    evaluateBidCriteria,
+    evaluateFinalScore
+  };
   

@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         evaluation_criteria_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         score: {
             type: DataTypes.FLOAT,
