@@ -3,7 +3,7 @@ const supabaseConfig = require('../config/supabase');
 
 const supabaseUrl = supabaseConfig.url;
 const supabaseKey = supabaseConfig.secretKey;
-const bucketName = bucketName;
+const bucketName = supabaseConfig.bucketName;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
