@@ -45,3 +45,18 @@ exports.getBidDocument = async (bidDocumentId) => {
         return null;
     }
 }
+
+exports.getBidDocumentsByProcurementBidId = async (procurementBidId) => {
+    try {
+        const bidDocuments = await db.BidDocument.findAll({
+            where: {
+                procurement_bid_id: procurementBidId,
+            },
+        });
+
+        return bidDocuments;
+    } catch (error) {
+        console.error("Error fetching bid documents: ", error);
+        return null;
+    }
+};

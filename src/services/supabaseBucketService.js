@@ -35,3 +35,15 @@ exports.deleteFile = async (filePath) => {
 
     return true;
 }
+
+exports.getSignedUrl = async (filePath, expiresIn = 86400) => { // 86400 = 24 hours
+    const { data, error } = await supabase.storage.from(bucketName)
+    .createSignedUrl(filePath, expiresIn);
+
+    if (error) {
+        console.error('Error generating signed URL:', error.message);
+        return null;
+    }
+
+    return data.signedUrl;
+};
