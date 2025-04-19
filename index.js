@@ -10,6 +10,7 @@ const procurementRoutesBuyer = require('./src/routes/procurementRoutes.js');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
+const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api',adminRoutes);
 app.use('/api',procurementRoutesBuyer);
 app.use('/api', procurementRoutes);
+app.use('/api', criteriaRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
@@ -49,6 +51,7 @@ app.listen(serverConfig.port, () => {
     - POST /api/buyer_types - Create buyer type
     - GET /api/procurement-requests - Get procurement requests (sellers only)
     - GET /api/procurement-categories - Get all categories
+    - GET /api/procurement-criterias - Get all procurement criterias
     - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)
     - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
