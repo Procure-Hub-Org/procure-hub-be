@@ -181,7 +181,7 @@ module.exports = {
         return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
       }
       //check if the status is valid
-      const validStatuses = ['active', 'closed', 'draft', 'awarded', 'freezed'];
+      const validStatuses = ['active', 'closed', 'draft', 'awarded', 'frozen'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: 'Invalid status value' });
       }
@@ -202,8 +202,8 @@ module.exports = {
       //allowed status transitions 
       const allowedTransitions = {
       draft: ['active'],
-      active: ['closed', 'freezed'],
-      freezed: ['active', 'closed'],
+      active: ['closed', 'frozen'],
+      frozen: ['active', 'closed'],
       closed: ['awarded'],
     };
     
@@ -260,8 +260,8 @@ module.exports = {
         return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
       }
       //check if the new status is valid
-      if (status === 'closed' || status === 'awarded' || status === 'freezed') {
-        return res.status(400).json({ message: 'Cannot set status to closed, awarded or freezed through this route' });
+      if (status === 'closed' || status === 'awarded' || status === 'frozen') {
+        return res.status(400).json({ message: 'Cannot set status to closed, awarded or frozen through this route' });
       }
       //if the status is not draft the procurement cannot be updated
       if (procurementRequest.status !== 'draft') {
