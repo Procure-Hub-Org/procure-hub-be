@@ -65,7 +65,7 @@ module.exports = {
         return res.status(400).json({ message: 'Procurement request cannot be created with status closed or awarded' }); 
       }*/}
       // Provjera datuma
-      if (deadline < new Date() || bid_edit_deadline < new Date()) {
+      if (new Date(deadline) < new Date() || new Date(bid_edit_deadline) < new Date()) {
         return res.status(400).json({ message: 'Deadline cannot be in the past' }); 
       }
       //provjera validnosti za requirements type
@@ -455,6 +455,17 @@ module.exports = {
             as: 'procurementCategory', 
             attributes: ['name'],
           },
+          {
+            model: EvaluationCriteria,
+            as: 'evaluationCriteria',
+            include: [
+              {
+                model: CriteriaType,
+                as: 'criteriaType',
+                attributes: ['name'],
+              },
+            ],
+          }
         ]
       });
       
