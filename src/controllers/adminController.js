@@ -189,7 +189,7 @@ const getBidLogsForProcurementRequest = async (req, res) => {
 
     try {
       const bids = await db.ProcurementBid.findAll({
-        where: { procurement_request_id: procurementRequest },
+        where: { procurement_request_id: procurementRequestId },
         include: [
           {
             model: db.User,
@@ -202,40 +202,31 @@ const getBidLogsForProcurementRequest = async (req, res) => {
             attributes: ['action', 'created_at'],
             order: [['created_at', 'DESC']],
           },
-          /*Nedimov dio*/
           {
-             model: db.bidevaluation,
-             as: 'evaluations',
-             attributes: ['score'],
+            model: db.BidEvaluation,
+            as: 'evaluations',
+            where: { evaluation_criteria_id: null },
+            required: false,
+            attributes: ['score'],
           }
-          /* Nedimov dio */
         ],
         order: [['created_at', 'DESC']],
       });
 
-    if (!logs.length) {
-      return res
-        .status(404)
-        .json({ message: "No logs found for this procurement request." });
-    }
-
     // Prepare data for frontend
-    const logData = bids.map((bid) => ({
+    console.log(JSON.stringify(bids));
+    
+    const BidData = bids.map((bid) => ({
       seller: bid.seller?.first_name + ' ' + bid.seller?.last_name || null,
       price: bid.price,
       timeline: bid.timeline,
-      proposal: bid.proposal,
+      proposal: bid.proposal_text,
       submitted_at: bid.submitted_at ? bid.submitted_at.toISOString() : null,
-      adminLogs: bid.adminLogs.map(log => ({
-        action: log.action,
-        created_at: log.created_at.toISOString(),
-      })),
-      evaluations: bid.evaluations.map(evaluation => ({
-        score: evaluation.score,
-      })),
+      adminLogs: bid.adminLogs ? bid.adminLogs : null,
+      score: bid.evaluations?.[0]?.score ?? null
     }));
 
-    res.json(logData);
+    res.json(BidData);
   } catch (error) {
     console.error("Error fetching logs:", error);
     res.status(500).send("Internal Server Error");
