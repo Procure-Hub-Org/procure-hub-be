@@ -9,12 +9,11 @@ const {
   ProcurementCategory
 } = require('../../database/models');
 const { Op } = require('sequelize');
-
 const getBidProposals = async (req, res) => {
   try {
     const { procurementRequestId } = req.params;
-    const userId = req.user.id;
 
+    const userId = req.user.id;
     const procurement = await ProcurementRequest.findOne({
       where: {
         id: procurementRequestId,
@@ -24,7 +23,7 @@ const getBidProposals = async (req, res) => {
       include: [
         {
           model: ProcurementCategory,
-          as: 'procurementCategory', // <- Dodano da se može dohvatiti naziv kategorije
+          as: 'procurementCategory', 
           attributes: ['name']
         },
         {
@@ -75,15 +74,19 @@ const getBidProposals = async (req, res) => {
       let evaluationStatus = 'Nije evaluirano';
 
       evaluationsRaw.forEach(evaluation => {
-        if (evaluation.evaluation_criteria_id === null) {
-          finalScore = evaluation.score;
-        } else {
-          const crit = evaluation.evaluationCriteria;
+        const criteria = evaluation.evaluationCriteria;
+        const type = criteria?.criteriaType;
+
+        if (criteria) {
+          console.log('DEBUG CRITERIA:', criteria); // Add this log to check criteria data
           criteriaEvaluations.push({
-            criteria: crit?.dataValues.CriteriaType?.name || 'Nema naziva kriterija',
-            score: evaluation.score,
-            weight: crit ? `${crit.weight}%` : 'Nema težine'
+            criteriaId: criteria.id,
+            criteriaName: type?.name || 'Nema naziva kriterija',
+            weight: criteria?.weight ? `${criteria.weight}%` : 'Nema težine',
+            score: evaluation.score
           });
+        } else {
+          finalScore = evaluation.score;
         }
       });
 
@@ -236,7 +239,52 @@ async function evaluateBidCriteria(req, res) {
     return res.status(500).json({ message: 'Internal server error.' });
   }
 }
+const getCriteriaByBidProposal = async (req, res) => {
+  try {
+    const { bidId } = req.params;
+
+    // Pronađi sve evaluacije koje pripadaju datom bid-u i imaju kriterije
+    const evaluations = await BidEvaluation.findAll({
+      where: {
+        procurement_bid_id: bidId,
+        evaluation_criteria_id: { [Op.not]: null }
+      },
+      include: [
+        {
+          model: EvaluationCriteria,
+          as: 'evaluationCriteria',
+          include: [
+            {
+              model: CriteriaType,
+              as: 'criteriaType',
+              attributes: ['name']
+            }
+          ]
+        }
+      ]
+    });
+
+    const criteriaList = evaluations.map(evaluation => {
+      const criteria = evaluation.evaluationCriteria;
+      return {
+        criteriaId: criteria.id,
+        criteriaName: criteria.criteriaType?.name || 'Nepoznat kriterij',
+        weight: criteria.weight,
+        score: evaluation.score
+      };
+    });
+
+    return res.status(200).json({
+      bidId,
+      criteria: criteriaList
+    });
+  } catch (error) {
+    console.error("Greška prilikom dohvaćanja kriterija za bid:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
 module.exports = {
   getBidProposals,
-  evaluateBidCriteria
+  evaluateBidCriteria,
+  getCriteriaByBidProposal
 };
