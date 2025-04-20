@@ -65,7 +65,7 @@ module.exports = {
         return res.status(400).json({ message: 'Procurement request cannot be created with status closed or awarded' }); 
       }*/}
       // Provjera datuma
-      if (new Date(deadline) < new Date() || new Date(bid_edit_deadline) < new Date()) {
+      if (new Date(deadline) < new Date() || (bid_edit_deadline && new Date(bid_edit_deadline) < new Date())) {
         return res.status(400).json({ message: 'Deadline cannot be in the past' }); 
       }
       //provjera validnosti za requirements type
@@ -284,7 +284,7 @@ module.exports = {
         return res.status(400).json({ message: 'Minimum and maximum budget cannot be the same' });
       }
       //check if the deadline is in the past
-      if (new Date(deadline) < new Date() || new Date(bid_edit_deadline) < new Date()) {
+      if (new Date(deadline) < new Date() || (bid_edit_deadline && new Date(bid_edit_deadline) < new Date())) {
         return res.status(400).json({ message: 'Deadline cannot be in the past' });
       }
       //get the category id from the name
