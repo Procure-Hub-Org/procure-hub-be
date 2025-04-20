@@ -1,6 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const supabaseConfig = require('../config/supabase');
 
+const {redisClient, redisConnected} = require('../services/redisService');
+
 const supabaseUrl = supabaseConfig.url;
 const supabaseKey = supabaseConfig.secretKey;
 const bucketName = supabaseConfig.bucketName;
@@ -37,6 +39,15 @@ exports.deleteFile = async (filePath) => {
 }
 
 exports.getSignedUrl = async (filePath, expiresIn = 86400) => { // 86400 = 24 hours
+    const cacheKey = `signedurl:${filePath}`;
+    if (redisConnected()) {
+        const cachedUrl = await redisClient().get(cacheKey);
+        if (cachedUrl) {
+            console.log('Cache hit for signed URL:', cachedUrl);
+            return cachedUrl;
+        }
+        console.log('Cache miss for signed URL, generating new one...');
+    }
     const { data, error } = await supabase.storage.from(bucketName)
     .createSignedUrl(filePath, expiresIn);
 
@@ -45,5 +56,11 @@ exports.getSignedUrl = async (filePath, expiresIn = 86400) => { // 86400 = 24 ho
         return null;
     }
 
-    return data.signedUrl;
+    const signedUrl = data.signedUrl;
+
+    if (redisConnected()) {
+        await redisClient().set(cacheKey, signedUrl, { EX: expiresIn });
+    }
+
+    return signedUrl;
 };
