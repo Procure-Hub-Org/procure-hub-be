@@ -54,7 +54,10 @@ app.listen(serverConfig.port, () => {
     - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)
     - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
-    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)`);
+    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
+    - POST /bid-documents/upload - Upload bid document (sellers only)
+    - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
+    - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request`);
 });
 
 
