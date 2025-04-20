@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const db = require("../../database/models");
 console.log("User", db);
 const buyerTypeController = require("./buyerTypeController");
+const { generateBidAlerts } = require('../services/alertService');
+
 
 const createUserByAdmin = async (req, res) => {
   try {
@@ -240,9 +242,24 @@ const getBidLogsForProcurementRequest = async (req, res) => {
   }
 };
 
+const generateAlerts = async (req, res) => {
+  const procurementRequestId = req.params.id;
+
+  try {
+    await generateBidAlerts(req.app.get('db'), procurementRequestId);
+    res.status(200).send('Alertovi su uspešno generisani.');
+  } catch (error) {
+    console.error('Greška pri generisanju alertova:', error);
+    res.status(500).send('Interna greška servera');
+  }
+};
+
+
+
 module.exports = {
   createUserByAdmin,
   updateUserByAdmin,
   getAllProcurementRequestsAsAdmin,
   getBidLogsForProcurementRequest,
+  generateAlerts,
 };

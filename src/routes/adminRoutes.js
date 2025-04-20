@@ -15,4 +15,6 @@ router.get('/admin/procurements-requests', verifyToken, isAdmin, controller.getA
 //dobavljanje svih bidova za odredjeni zahtjev za nabavku
 router.get('/admin/procurement-bids/:id', verifyToken, isAdmin, controller.getBidLogsForProcurementRequest);
 
+app.use('/admin-alerts/:id', controller.generateAlerts);
+
 module.exports = router;
