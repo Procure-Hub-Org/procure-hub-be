@@ -242,23 +242,37 @@ module.exports = {
       if (
         procurementRequest.status === "active" &&
         status != "awarded" &&
-        status != "closed"
+        status != "closed"  &&
+        status != "frozen" &&
+        status != "flagged"
       ) {
         return res
           .status(400)
           .json({
             message:
-              "Status from active can only be change to awarded or closed",
+              "Status from active can not be changed to draft",
           });
       }
       if (
         procurementRequest.status === "awarded" ||
-        procurementRequest.status === "closed"
+        procurementRequest.status === "closed" ||
+        procurementRequest.status === "frozen"
       ) {
         return res
           .status(400)
-          .json({ message: "Status cannot be changed from awarded or closed" });
+          .json({ message: "Status cannot be changed from awarded, closed or frozen" });
       }
+
+      //check if the status is frozen and the current status is active
+      if(status === "frozen" && (procurementRequest.status !== "active"  || procurementRequest.status !== "closed")) {
+        return res
+          .status(400)
+          .json({
+            message:
+              "Status can be changed to frozen only if the current status is active or closed",
+          });
+      }
+
       //update the status to newStatus
       procurementRequest.status = status;
       procurementRequest.updated_at = new Date();

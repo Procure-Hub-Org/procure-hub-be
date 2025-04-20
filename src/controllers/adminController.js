@@ -154,9 +154,9 @@ const updateUserByAdmin = async (req, res) => {
   }
 };
 
-const getAllProcurementRequestsAsAdmin = async (req, res) => { 
-    try {
-      const [results] = await db.sequelize.query(`
+const getAllProcurementRequestsAsAdmin = async (req, res) => {
+  try {
+    const [results] = await db.sequelize.query(`
         SELECT 
           pr.id,
           pr.title,
@@ -175,14 +175,74 @@ const getAllProcurementRequestsAsAdmin = async (req, res) => {
         LEFT JOIN admin_logs a ON a.procurement_bid_id = pb.id
         GROUP BY pr.id, pr.title, pr.description, pr.deadline, pr.flagged, pr.status, pc.name, u.email
       `);
-      res.status(200).json(results);
-      
-      
-  }catch (error) {
-  console.error("Error loading procurement requests:", error);
-  res.status(500).json({ error: "Internal server error" });
-  } 
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error loading procurement requests:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
+const getBidLogsForProcurementRequest = async (req, res) => {
+  const procurementRequestId = req.params.id; // Procurement request ID from URL
 
-module.exports = { createUserByAdmin, updateUserByAdmin, getAllProcurementRequestsAsAdmin };
+    try {
+      const bids = await db.ProcurementBid.findAll({
+        where: { procurement_request_id: procurementRequest },
+        include: [
+          {
+            model: db.User,
+            as: 'seller',
+            attributes: ['first_name', 'last_name'],
+          },
+          {
+            model: db.AdminLog,
+            as: 'adminLogs',
+            attributes: ['action', 'created_at'],
+            order: [['created_at', 'DESC']],
+          },
+          /*Nedimov dio*/
+          {
+             model: db.bidevaluation,
+             as: 'evaluations',
+             attributes: ['score'],
+          }
+          /* Nedimov dio */
+        ],
+        order: [['created_at', 'DESC']],
+      });
+
+    if (!logs.length) {
+      return res
+        .status(404)
+        .json({ message: "No logs found for this procurement request." });
+    }
+
+    // Prepare data for frontend
+    const logData = bids.map((bid) => ({
+      seller: bid.seller?.first_name + ' ' + bid.seller?.last_name || null,
+      price: bid.price,
+      timeline: bid.timeline,
+      proposal: bid.proposal,
+      submitted_at: bid.submitted_at ? bid.submitted_at.toISOString() : null,
+      adminLogs: bid.adminLogs.map(log => ({
+        action: log.action,
+        created_at: log.created_at.toISOString(),
+      })),
+      evaluations: bid.evaluations.map(evaluation => ({
+        score: evaluation.score,
+      })),
+    }));
+
+    res.json(logData);
+  } catch (error) {
+    console.error("Error fetching logs:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+module.exports = {
+  createUserByAdmin,
+  updateUserByAdmin,
+  getAllProcurementRequestsAsAdmin,
+  getBidLogsForProcurementRequest,
+};
