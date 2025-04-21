@@ -87,9 +87,16 @@ exports.updateDraftBid = async (req, res) => {
       }
   
       const request = await ProcurementRequest.findByPk(bid.procurement_request_id);
-        if (!request) {
-            return res.status(400).json({ message: 'Procurement request not found' });
-        }
+      if (!request) {
+        return res.status(400).json({ message: 'Procurement request not found' });
+      }
+
+      if(request.deadline < new Date()){
+        return res.status(400).json({ message: 'Procurement request deadline has passed!' });
+      }
+      if (request.status !== 'active') {
+        return res.status(400).json({ message: 'Procurement request is not active.' });
+      }
       // Build an object with only the fields that are present
       const updatedFields = {};
       if (price !== undefined){
@@ -141,6 +148,13 @@ exports.submitDraftBid = async (req, res) => {
         }
         if(req.user.status !== 'active') {
           return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
+        }
+
+        if(request.deadline < new Date()){
+          return res.status(400).json({ message: 'Procurement request deadline has passed!' });
+        }
+        if (request.status !== 'active') {
+          return res.status(400).json({ message: 'Procurement request is not active.' });
         }
 
         // Check if the bid is already submitted
