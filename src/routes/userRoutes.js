@@ -5,7 +5,7 @@ const userController = require('../controllers/userController.js');
 const profileController = require("../controllers/profileController");
 
 const authMiddleware = require("../middleware/authMiddleware"); // provjera ulogovanog korisnika 
-const upload = require("../middleware/uploadMiddleware"); // middleware za upload slika
+const upload = require("../middleware/uploadImageMiddleware"); // middleware za upload slika
 const { registerValidator } = require('../middleware/userValidator.js');
 
 router.post('/user/register', registerValidator, userController.register);
