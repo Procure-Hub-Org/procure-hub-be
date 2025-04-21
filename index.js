@@ -10,6 +10,7 @@ const procurementRoutesBuyer = require('./src/routes/procurementRoutes.js');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
+const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api', procurementRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
+app.use('/api', bidProposalRoutes);
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -52,7 +54,10 @@ app.listen(serverConfig.port, () => {
     - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)
     - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
-    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)`);
+    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
+    - POST /api/bid/create - Create a new bid (sellers only)
+    - PUT /api/bid/:id/update - Update a bid (sellers only)
+    - PUT /api/bid/:id/submit - Submit a bid (sellers only)`);
 });
 
 
