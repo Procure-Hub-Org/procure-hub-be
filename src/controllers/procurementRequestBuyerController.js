@@ -218,7 +218,7 @@ module.exports = {
           .json({ message: "Procurement request not found" });
       }
       //check if the logged-in user is the buyer who created this procurement request
-      if (procurementRequest.buyer_id !== userId) {
+      if (procurementRequest.buyer_id !== userId && req.user.role !== "admin") {
         return res
           .status(403)
           .json({
