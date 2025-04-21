@@ -11,6 +11,9 @@ const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
 const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
+const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
+const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
+
 
 const app = express();
 
@@ -33,6 +36,8 @@ app.use('/api', criteriaRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
+app.use('/api', procurementBidRoutes);
+app.use('/api', bidDocumentRoutes);
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -57,7 +62,11 @@ app.listen(serverConfig.port, () => {
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
     - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
     - GET /api/procurement-requests/:id - Get procurement request details
-    - GET /api/procurement/:id/bids - Get all bids for a specific procurement request`);
+    - GET /api/procurement/:id/bids - Get all bids for a specific procurement request
+    - POST /bid-documents/upload - Upload bid document (sellers only)
+    - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
+    - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request
+    - GET /api/bids/user/:userId - Fetch all seller's bids`);
 });
 
 

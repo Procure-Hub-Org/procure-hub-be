@@ -1,7 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 
-const allowedExtensions = ['.doc', '.docx', '.pdf', '.jpg', '.jpeg', '.png'];
+const allowedExtensions = ['.jpg', '.jpeg', '.png'];
 
 const storage = multer.memoryStorage();
 
@@ -15,7 +15,7 @@ const upload = multer({
         if (allowedExtensions.includes(ext)) {
             cb(null, true);
         } else {
-            req.fileValidationError = "Only .doc, .docx, .pdf, .jpg, .jpeg, and .png files are allowed";
+            req.fileValidationError = "Only .jpg, .jpeg, and .png files are allowed";
             cb(null, false, req.fileValidationError);
         }
     }
