@@ -309,7 +309,7 @@ module.exports = {
       procurementRequest.category_id = categoryData.id;
       procurementRequest.status = status || procurementRequest.status;
       procurementRequest.location = location || procurementRequest.location;
-      procurementRequest.bid_edit_deadline = bid_edit_deadline || procurementRequest.bid_edit_deadline;
+      procurementRequest.bid_edit_deadline = bid_edit_deadline ? bid_edit_deadline: null;
       procurementRequest.updated_at = new Date();
   
       await procurementRequest.save({ transaction: t });
@@ -359,7 +359,7 @@ module.exports = {
           await t.rollback();
           return res.status(400).json({ message: 'One or more requirement IDs are invalid' });
         }
-        await Requirement.destroy({ where: { procurement_request_id: procurementId, id: { notIn: requirementIds } }, transaction: t });
+        await Requirement.destroy({ where: { procurement_request_id: procurementId, id: { [Op.notIn]: requirementIds } }, transaction: t });
         for (const req of requirementsParsed) {
           const typeToUse = req.type?.toLowerCase();
           if (typeToUse !== 'technical' && typeToUse !== 'legal') {
@@ -428,8 +428,8 @@ module.exports = {
             }, { transaction: t });
           }
         }
-      }  
-  
+      } 
+        
       await t.commit();
       return res.status(200).json({
         message: 'Procurement request updated successfully',

@@ -46,7 +46,7 @@ app.listen(serverConfig.port, () => {
     - GET /api/user/profile - Get user profile info
     - POST /api/procurement/create - Create a new procurement request
     - PUT /api/procurement/:id/status - Update procurement request status
-    - PUT /api/procurement/:id/update - Update procurement request
+    - PATCH /api/procurement/:id/update - Update procurement request
     - GET /api/buyer_types - Get all buyer types
     - POST /api/buyer_types - Create buyer type
     - GET /api/procurement-requests - Get procurement requests (sellers only)
