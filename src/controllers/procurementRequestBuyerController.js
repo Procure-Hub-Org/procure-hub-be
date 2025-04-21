@@ -264,7 +264,7 @@ module.exports = {
       }
 
       //check if the status is frozen and the current status is active
-      if(status === "frozen" && (procurementRequest.status !== "active"  || procurementRequest.status !== "closed")) {
+      if(status === "frozen" && (procurementRequest.status !== "active"  && procurementRequest.status !== "closed")) {
         return res
           .status(400)
           .json({
