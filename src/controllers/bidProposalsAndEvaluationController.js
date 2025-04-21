@@ -12,53 +12,14 @@ const { Op } = require('sequelize');
 const getBidProposals = async (req, res) => {
   try {
     const { procurementRequestId } = req.params;
-
     const userId = req.user.id;
+
     const procurement = await ProcurementRequest.findOne({
       where: {
         id: procurementRequestId,
         status: 'closed',
         buyer_id: userId
-      },
-      include: [
-        {
-          model: ProcurementCategory,
-          as: 'procurementCategory', 
-          attributes: ['name']
-        },
-        {
-          model: ProcurementBid,
-          as: 'procurementBids',
-          include: [
-            {
-              model: User,
-              as: 'seller',
-              attributes: ['email', 'first_name', 'last_name', 'company_name']
-            },
-            {
-              model: BidDocument,
-              as: 'documents'
-            },
-            {
-              model: BidEvaluation,
-              as: 'evaluations',
-              include: [
-                {
-                  model: EvaluationCriteria,
-                  as: 'evaluationCriteria',
-                  include: [
-                    {
-                      model: CriteriaType,
-                      as: 'criteriaType',
-                      attributes: ['name']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
+      }
     });
 
     if (!procurement) {
@@ -67,64 +28,115 @@ const getBidProposals = async (req, res) => {
       });
     }
 
-    const bids = procurement.procurementBids.map(bid => {
-      const evaluationsRaw = bid.evaluations || [];
-      let finalScore = null;
-      let criteriaEvaluations = [];
-      let evaluationStatus = 'Nije evaluirano';
-
-      evaluationsRaw.forEach(evaluation => {
-        const criteria = evaluation.evaluationCriteria;
-        const type = criteria?.criteriaType;
-
-        if (criteria) {
-          console.log('DEBUG CRITERIA:', criteria); // Add this log to check criteria data
-          criteriaEvaluations.push({
-            criteriaId: criteria.id,
-            criteriaName: type?.name || 'Nema naziva kriterija',
-            weight: criteria?.weight ? `${criteria.weight}%` : 'Nema težine',
-            score: evaluation.score
-          });
-        } else {
-          finalScore = evaluation.score;
-        }
-      });
-
-      if (criteriaEvaluations.length === 0 && finalScore === null) {
-        evaluationStatus = 'Nije evaluirano';
-      } else if (criteriaEvaluations.length > 0 && finalScore === null) {
-        evaluationStatus = 'Djelimično evaluirano (po kriterijima, bez ukupne ocjene)';
-      } else if (criteriaEvaluations.length > 0 && finalScore !== null) {
-        evaluationStatus = 'Evaluirano (po kriterijima i ukupna ocjena)';
-      }
-
-      return {
-        id: bid.id,
-        seller: {
-          email: bid.seller?.email,
-          first_name: bid.seller?.first_name,
-          last_name: bid.seller?.last_name,
-          company_name: bid.seller?.company_name
-        },
-        price: bid.price,
-        timeline: bid.timeline,
-        proposalText: bid.proposal_text,
-        submittedAt: bid.submitted_at,
-        documents: (bid.documents || []).map(doc => ({
-          original_name: doc.original_name,
-          file_path: doc.file_path
-        })),
-        evaluations: criteriaEvaluations,
-        finalScore: finalScore,
-        evaluationStatus: evaluationStatus
-      };
+    let procurementCategory = null;
+if (procurement.procurement_category_id) {
+  procurementCategory = await ProcurementCategory.findOne({
+    where: { id: procurement.procurement_category_id },
+    attributes: ['name']
+  });
+}
+    const procurementBids = await ProcurementBid.findAll({
+      where: { procurement_request_id: procurement.id }
     });
+
+    const bids = await Promise.all(
+      procurementBids.map(async (bid) => {
+        const seller = await User.findOne({
+          where: { id: bid.seller_id },
+          attributes: ['email', 'first_name', 'last_name', 'company_name']
+        });
+
+        const documents = await BidDocument.findAll({
+          where: { procurement_bid_id: bid.id }
+        });
+
+        const bidEvaluations = await BidEvaluation.findAll({
+          where: { procurement_bid_id: bid.id }
+        });
+
+        const fullEvaluations = await Promise.all(
+          bidEvaluations.map(async (evaluation) => {
+            const criteria = await EvaluationCriteria.findOne({
+              where: { id: evaluation.evaluation_criteria_id }
+            });
+
+            let criteriaType = null;
+            if (criteria) {
+              criteriaType = await CriteriaType.findOne({
+                where: { id: criteria.criteria_type_id },
+                attributes: ['name']
+              });
+            }
+
+            return {
+              ...evaluation.toJSON(),
+              evaluationCriteria: criteria
+                ? {
+                    ...criteria.toJSON(),
+                    criteriaType
+                  }
+                : null
+            };
+          })
+        );
+
+        // Procesuiranje evaluacija
+        let finalScore = null;
+        let criteriaEvaluations = [];
+        let evaluationStatus = 'Nije evaluirano';
+
+        fullEvaluations.forEach(evaluation => {
+          const criteria = evaluation.evaluationCriteria;
+          const type = criteria?.criteriaType;
+
+          if (criteria) {
+            criteriaEvaluations.push({
+              criteriaId: criteria.id,
+              criteriaName: type?.name || 'Nema naziva kriterija',
+              weight: criteria?.weight ? `${criteria.weight}%` : 'Nema težine',
+              score: evaluation.score
+            });
+          } else {
+            finalScore = evaluation.score;
+          }
+        });
+
+        if (criteriaEvaluations.length === 0 && finalScore === null) {
+          evaluationStatus = 'Nije evaluirano';
+        } else if (criteriaEvaluations.length > 0 && finalScore === null) {
+          evaluationStatus = 'Djelimično evaluirano (po kriterijima, bez ukupne ocjene)';
+        } else if (criteriaEvaluations.length > 0 && finalScore !== null) {
+          evaluationStatus = 'Evaluirano (po kriterijima i ukupna ocjena)';
+        }
+
+        return {
+          id: bid.id,
+          seller: {
+            email: seller?.email,
+            first_name: seller?.first_name,
+            last_name: seller?.last_name,
+            company_name: seller?.company_name
+          },
+          price: bid.price,
+          timeline: bid.timeline,
+          proposalText: bid.proposal_text,
+          submittedAt: bid.submitted_at,
+          documents: documents.map(doc => ({
+            original_name: doc.original_name,
+            file_path: doc.file_path
+          })),
+          evaluations: criteriaEvaluations,
+          finalScore: finalScore,
+          evaluationStatus: evaluationStatus
+        };
+      })
+    );
 
     return res.status(200).json({
       procurementRequestId: procurement.id,
       title: procurement.title,
       description: procurement.description,
-      category: procurement.procurementCategory?.name || 'Nepoznata kategorija',
+      category: procurementCategory?.name || 'Nepoznata kategorija',
       budgetMin: procurement.budget_min,
       budgetMax: procurement.budget_max,
       location: procurement.location,
@@ -137,6 +149,7 @@ const getBidProposals = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
 
 async function evaluateBidCriteria(req, res) {
   try {
