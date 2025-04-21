@@ -1,11 +1,12 @@
 const moment = require('moment');
+const { Sequelize } = require('sequelize');
 
 const generateBidAlerts = async (db, procurementRequestId) => {
   const procurementRequest = await db.ProcurementRequest.findByPk(procurementRequestId, {
     include: [
       {
         model: db.ProcurementBid,
-        as: 'bids',
+        as: 'procurementBids',
         include: [
           {
             model: db.User,
@@ -26,9 +27,12 @@ const generateBidAlerts = async (db, procurementRequestId) => {
     throw new Error('Procurement request not found');
   }
 
+
+
   const alerts = [];
 
-  procurementRequest.bids.forEach((bid) => {
+
+  procurementRequest.procurementBids.forEach((bid) => {
     const bidSubmissionTime = moment(bid.submitted_at);
     const procurementCloseTime = moment(procurementRequest.close_at);
 
@@ -52,6 +56,23 @@ const generateBidAlerts = async (db, procurementRequestId) => {
   });
 
   if (alerts.length > 0) {
-    await db.AdminAlert.bulkCreate(alerts);
-  }
+    const existingAlerts = await db.AdminAlert.findAll({
+      where: {
+        procurement_request_id: { [Sequelize.Op.in]: alerts.map(alert => alert.procurement_request_id) }
+      }
+    });
+
+    const newAlerts = alerts.filter(alert => {
+      return !existingAlerts.some(existingAlert => existingAlert.procurement_request_id === alert.procurement_request_id);
+    });
+    
+    if (newAlerts.length > 0) {
+      await db.AdminAlert.bulkCreate(newAlerts);
+    } 
+  
+    await db.ProcurementRequest.update( { flagged: true }, { where: { id: procurementRequestId } });
+  } 
+  console.log("ALERTS" + alerts);
 };
+
+module.exports = { generateBidAlerts };

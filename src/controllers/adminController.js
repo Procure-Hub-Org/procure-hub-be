@@ -237,11 +237,33 @@ const generateAlerts = async (req, res) => {
   const procurementRequestId = req.params.id;
 
   try {
-    await generateBidAlerts(req.app.get('db'), procurementRequestId);
-    res.status(200).send('Alertovi su uspešno generisani.');
+   // await generateBidAlerts(db, procurementRequestId);
+
+    const alerts = await db.AdminAlert.findAll({
+      where: { procurement_request_id: procurementRequestId },
+      attributes: ['alert', 'created_at'],
+      order: [['created_at', 'DESC']],
+    });
+    res.status(200).json(alerts)
   } catch (error) {
-    console.error('Greška pri generisanju alertova:', error);
-    res.status(500).send('Interna greška servera');
+    console.error('Error generating alerts:', error);
+    res.status(500).send('Internal server error.');
+  }
+};
+
+
+const updateAllAlerts = async (req, res) => {
+  try {
+    const allRequests = await db.ProcurementRequest.findAll({ attributes: ['id'] });
+
+    for (const request of allRequests) {
+      await generateBidAlerts(db, request.id);
+    }
+    
+    res.status(200).send('All bids checked and flags updated.');
+  } catch (error) {
+    console.error('Error updating alerts:', error);
+    res.status(500).send('Internal server error.');
   }
 };
 
@@ -253,4 +275,5 @@ module.exports = {
   getAllProcurementRequestsAsAdmin,
   getBidLogsForProcurementRequest,
   generateAlerts,
+  updateAllAlerts
 };
