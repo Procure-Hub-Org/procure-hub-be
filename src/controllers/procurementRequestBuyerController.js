@@ -166,7 +166,7 @@ module.exports = {
         return res.status(400).json({ message: 'Status from draft can only be changed to active' });
       }if (procurementRequest.status === 'active' && status != 'awarded' && status != 'closed') {
         return res.status(400).json({ message: 'Status from active can only be change to awarded or closed' });
-      }if(procurementRequest.status === 'awarded' || procurementRequest.status === 'closed'){
+      }if(procurementRequest.status === 'awarded' /*|| procurementRequest.status === 'closed'*/){
         return res.status(400).json({ message: 'Status cannot be changed from awarded or closed' });
       }
       //update the status to newStatus
