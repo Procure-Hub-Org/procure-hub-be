@@ -32,7 +32,7 @@ app.use('/api', procurementRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
-app.use('/api', bidProposalRoutes);
+app.use('/api', bidProposalRoutes)
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -56,8 +56,9 @@ app.listen(serverConfig.port, () => {
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
     - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
     - POST /api/bid/create - Create a new bid (sellers only)
-    - PUT /api/bid/:id/update - Update a bid (sellers only)
-    - PUT /api/bid/:id/submit - Submit a bid (sellers only)`);
+    - PUT /api/bid/:id/update - Update a bid that's not submitted (sellers only)
+    - PUT /api/bid/:id/submit - Submit a bid (sellers only)
+    - GET /api/bid/:id/preview - Preview a bid (sellers only)`);
 });
 
 
