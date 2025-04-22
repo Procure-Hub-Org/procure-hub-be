@@ -150,7 +150,7 @@ exports.submitDraftBid = async (req, res) => {
           return res.status(403).json({ message: 'Your account is not active. Please contact support.' });
         }
 
-        const request = await ProcurementRequest.findByPk(procurement_request_id);
+        const request = await ProcurementRequest.findByPk(bid.procurement_request_id);
         if (!request) {
             return res.status(400).json({ message: 'Procurement request not found' });
         }
