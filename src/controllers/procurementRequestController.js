@@ -1,6 +1,6 @@
 const procurementRequestService = require("../services/procurementRequestService");
 const { Op } = require('sequelize');
-const { ProcurementRequest, ProcurementCategory, User, BuyerType} = require('../../database/models/'); 
+const { ProcurementRequest, ProcurementCategory, User, BuyerType,EvaluationCriteria,CriteriaType} = require('../../database/models/'); 
 const { getBuyerTypeById } = require('./buyerTypeController')
 
 exports.follow = async (req, res) => {
@@ -82,8 +82,9 @@ exports.getBuyerProcurementRequests = async (req, res) => {
 exports.getOpenProcurementRequests = async (req, res) => {
     try {
       const filters = { status: "active" };    
-      const { category_id, deadline, buyer_id, location, budget_min,budget_max,buyer_type_name } = req.query;
+      const { category_id, deadline, buyer_id, location, budget_min,budget_max,buyer_type_name,criteria} = req.query;
   
+      //Filters
       if (category_id) {
         filters.category_id = category_id;
       }
@@ -96,7 +97,6 @@ exports.getOpenProcurementRequests = async (req, res) => {
         };
       }
   
-      // Dohvati sve kategorije u mapi
       const categories = await ProcurementCategory.findAll({
         attributes: ['id', 'name'],
         raw: true,
@@ -111,17 +111,23 @@ exports.getOpenProcurementRequests = async (req, res) => {
       ? { name: { [Op.iLike]: `%${buyer_type_name}%` } }
       : undefined;
   
-  
-      // Ako postoji deadline konvertiraj u Date 
       if (deadline) {
-        filters.deadline = { [Op.lte]: new Date(deadline) };
+        filters.deadline = { [Op.gte]: new Date(deadline) };
       }
-      // Ako postoji budzet, konvertiraj u Number
+
       if (budget_min) {
         filters.budget_max = { [Op.gte]: Number(budget_min) }; 
       }
+      
       if (budget_max) {
         filters.budget_min = { [Op.lte]: Number(budget_max) }; 
+      }
+
+      if (criteria) {
+        filters[Op.or] = [
+          { title: { [Op.iLike]: `%${criteria}%` } },
+          { description: { [Op.iLike]: `%${criteria}%` } }
+        ];
       }
        
   
@@ -144,6 +150,18 @@ exports.getOpenProcurementRequests = async (req, res) => {
                 attributes: ['name'],
                 as: 'buyerType',
                 where: buyerTypeFilter,
+              }
+            ]
+          },
+          {
+            model: EvaluationCriteria,
+            as: 'evaluationCriteria',
+            attributes: ['weight'], 
+            include: [
+              {
+                model: CriteriaType,
+                as: 'criteriaType',
+                attributes: ['name'],
               }
             ]
           }
@@ -170,4 +188,29 @@ exports.getOpenProcurementRequests = async (req, res) => {
       console.error('Failed to fetch open procurement requests:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
+};
+
+exports.getProcurementCriteria = async (req, res) => {
+  try {
+    const criteria = await EvaluationCriteria.findAll({
+      attributes: ['weight'],
+      include: [
+        {
+          model: CriteriaType,
+          as: 'criteriaType',
+          attributes: ['name']
+        }
+      ]
+    });
+
+    const formatted = criteria.map(c => ({
+      name: c.criteriaType?.name,
+      weight: c.weight
+    }));
+
+    res.status(200).json({ success: true, data: formatted });
+  } catch (error) {
+    console.error('Failed to fetch procurement criteria:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 };
