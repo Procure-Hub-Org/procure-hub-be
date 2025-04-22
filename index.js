@@ -64,6 +64,7 @@ app.listen(serverConfig.port, () => {
     - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
     - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
+    - GET /api/procurement-bids/:id - Get all procurement bids (sellers only)
     - GET /api/procurement-requests/:id - Get procurement request details
     - GET /api/procurement/:id/bids - Get all bids for a specific procurement request
     - POST /api/bid/create - Create a new bid (sellers only)

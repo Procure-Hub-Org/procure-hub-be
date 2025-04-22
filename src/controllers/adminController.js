@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const db = require("../../database/models");
 console.log("User", db);
 const buyerTypeController = require("./buyerTypeController");
+const { generateBidAlerts } = require('../services/alertService');
+
 
 const createUserByAdmin = async (req, res) => {
   try {
@@ -154,4 +156,124 @@ const updateUserByAdmin = async (req, res) => {
   }
 };
 
-module.exports = { createUserByAdmin, updateUserByAdmin };
+const getAllProcurementRequestsAsAdmin = async (req, res) => {
+  try {
+    const [results] = await db.sequelize.query(`
+        SELECT 
+          pr.id,
+          pr.title,
+          pr.description,
+          pr.deadline,
+          pr.flagged,
+          pr.status,
+          pc.name AS category,
+          u.email AS buyerEmail,
+          COUNT(DISTINCT pb.id) AS bids,
+          COUNT(DISTINCT a.id) AS logs
+        FROM procurement_requests pr
+        INNER JOIN procurement_categories pc ON pr.category_id = pc.id
+        INNER JOIN users u ON pr.buyer_id = u.id
+        LEFT JOIN procurement_bids pb ON pb.procurement_request_id = pr.id
+        LEFT JOIN admin_logs a ON a.procurement_bid_id = pb.id
+        GROUP BY pr.id, pr.title, pr.description, pr.deadline, pr.flagged, pr.status, pc.name, u.email
+      `);
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error loading procurement requests:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getBidLogsForProcurementRequest = async (req, res) => {
+  const procurementRequestId = req.params.id; // Procurement request ID from URL
+
+    try {
+      const bids = await db.ProcurementBid.findAll({
+        where: { procurement_request_id: procurementRequestId },
+        include: [
+          {
+            model: db.User,
+            as: 'seller',
+            attributes: ['first_name', 'last_name'],
+          },
+          {
+            model: db.AdminLog,
+            as: 'adminLogs',
+            attributes: ['action', 'created_at'],
+            order: [['created_at', 'DESC']],
+          },
+          {
+            model: db.BidEvaluation,
+            as: 'evaluations',
+            where: { evaluation_criteria_id: null },
+            required: false,
+            attributes: ['score'],
+          }
+        ],
+        order: [['created_at', 'DESC']],
+      });
+
+    // Prepare data for frontend
+    console.log(JSON.stringify(bids));
+    
+    const BidData = bids.map((bid) => ({
+      seller: bid.seller?.first_name + ' ' + bid.seller?.last_name || null,
+      price: bid.price,
+      timeline: bid.timeline,
+      proposal: bid.proposal_text,
+      submitted_at: bid.submitted_at ? bid.submitted_at.toISOString() : null,
+      adminLogs: bid.adminLogs ? bid.adminLogs : null,
+      score: bid.evaluations?.[0]?.score ?? null
+    }));
+
+    res.json(BidData);
+  } catch (error) {
+    console.error("Error fetching logs:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+const generateAlerts = async (req, res) => {
+  const procurementRequestId = req.params.id;
+
+  try {
+   // await generateBidAlerts(db, procurementRequestId);
+
+    const alerts = await db.AdminAlert.findAll({
+      where: { procurement_request_id: procurementRequestId },
+      attributes: ['alert', 'created_at'],
+      order: [['created_at', 'DESC']],
+    });
+    res.status(200).json(alerts)
+  } catch (error) {
+    console.error('Error generating alerts:', error);
+    res.status(500).send('Internal server error.');
+  }
+};
+
+
+const updateAllAlerts = async (req, res) => {
+  try {
+    const allRequests = await db.ProcurementRequest.findAll({ attributes: ['id'] });
+
+    for (const request of allRequests) {
+      await generateBidAlerts(db, request.id);
+    }
+    
+    res.status(200).send('All bids checked and flags updated.');
+  } catch (error) {
+    console.error('Error updating alerts:', error);
+    res.status(500).send('Internal server error.');
+  }
+};
+
+
+
+module.exports = {
+  createUserByAdmin,
+  updateUserByAdmin,
+  getAllProcurementRequestsAsAdmin,
+  getBidLogsForProcurementRequest,
+  generateAlerts,
+  updateAllAlerts
+};
