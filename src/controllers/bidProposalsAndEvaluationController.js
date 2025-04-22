@@ -177,9 +177,26 @@ async function evaluateBidCriteria(req, res) {
       return res.status(403).json({ message: `Unauthorized to evaluate bid ID ${bidId}.` });
     }
 
+
     // Unos pojedinačnih ocjena
     for (const eval of evaluations) {
-      const { procurement_bid_id, evaluation_criteria_id, score } = eval;
+      const { procurement_request_id, procurement_bid_id, criteria_type_id, score } = eval;
+      console.log('***EVAL IZ REQUESTA***', eval)
+      console.log('***PROCREQ IZ REQUESTA***', procurement_request_id)
+      console.log('***PROCBID IZ REQUESTA***', procurement_bid_id)
+      console.log('***CRITTYPE IZ REQUESTA***', criteria_type_id)
+      console.log('***SCORE IZ REQUESTA***', score)
+      let evaluationCriteriaId_old = criteria_type_id;
+    
+      console.log('Before search', evaluationCriteriaId_old);
+    
+      const evaluationCriteria = await EvaluationCriteria.findOne({
+        where: { criteria_type_id: evaluationCriteriaId_old, procurement_request_id: procurement_request_id }
+      });
+      
+      const evaluation_criteria_id = evaluationCriteria ? evaluationCriteria.dataValues.id : null;
+     
+      console.log('After search', evaluation_criteria_id);
 
       if (!procurement_bid_id || !evaluation_criteria_id || !score) {
         return res.status(400).json({ message: 'Missing required fields in one of the evaluations.' });
@@ -276,7 +293,7 @@ const getCriteriaByBidProposal = async (req, res) => {
         }
       ]
     });
-
+    
     const criteriaList = evaluations.map(evaluation => {
       const criteria = evaluation.evaluationCriteria;
       return {
@@ -287,6 +304,8 @@ const getCriteriaByBidProposal = async (req, res) => {
       };
     });
 
+    console.log('Šta nam loguješ', criteriaList);
+
     return res.status(200).json({
       bidId,
       criteria: criteriaList
@@ -296,8 +315,34 @@ const getCriteriaByBidProposal = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+const getEvaluationCriteriaByProcurementRequestId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const criteria = await EvaluationCriteria.findAll({
+      where: { procurement_request_id: id },
+      include: [
+        {
+          model: CriteriaType,
+          as: 'criteriaType'
+        }
+      ]
+    });
+
+    if (!criteria) {
+      return res.status(404).json({ message: 'No evaluation criteria found for this procurement request.' });
+    }
+
+    return res.status(200).json(criteria);
+  } catch (error) {
+    console.error("Greška prilikom dohvaćanja kriterija:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+}
+
 module.exports = {
   getBidProposals,
   evaluateBidCriteria,
-  getCriteriaByBidProposal
+  getCriteriaByBidProposal,
+  getEvaluationCriteriaByProcurementRequestId
 };
