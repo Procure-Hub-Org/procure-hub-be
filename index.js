@@ -11,6 +11,7 @@ const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
 const bidproposalRoutesBuyer = require('./src/routes/buyerBidProposalRoutes.js');
+const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
 const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
 const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api',adminRoutes);
 app.use('/api',procurementRoutesBuyer);
 app.use('/api', procurementRoutes);
+app.use('/api', criteriaRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
@@ -52,15 +54,18 @@ app.listen(serverConfig.port, () => {
     - GET /api/user/profile - Get user profile info
     - POST /api/procurement/create - Create a new procurement request
     - PUT /api/procurement/:id/status - Update procurement request status
-    - PUT /api/procurement/:id/update - Update procurement request
+    - PATCH /api/procurement/:id/update - Update procurement request
     - GET /api/buyer_types - Get all buyer types
     - POST /api/buyer_types - Create buyer type
     - GET /api/procurement-requests - Get procurement requests (sellers only)
     - GET /api/procurement-categories - Get all categories
+    - GET /api/procurement-criterias - Get all procurement criterias
     - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)
     - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
     - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
+    - GET /api/procurement-requests/:id - Get procurement request details
+    - GET /api/procurement/:id/bids - Get all bids for a specific procurement request
     - POST /api/bid/create - Create a new bid (sellers only)
     - PUT /api/bid/:id/update - Update a bid that's not submitted (sellers only)
     - PUT /api/bid/:id/submit - Submit a bid (sellers only)

@@ -110,7 +110,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: 'draft',
       validate: {
-        isIn: [['draft', 'active', 'closed', 'awarded']]
+        isIn: [['draft', 'active', 'closed', 'awarded','frozen']]
       }
     },
     location: {
