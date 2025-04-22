@@ -10,7 +10,11 @@ const procurementRoutesBuyer = require('./src/routes/procurementRoutes.js');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
-const bidproposalRoutes = require('./src/routes/buyerBidProposalRoutes.js');
+const bidproposalRoutesBuyer = require('./src/routes/buyerBidProposalRoutes.js');
+const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
+const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
+const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
+
 const app = express();
 
 // za slike
@@ -31,7 +35,11 @@ app.use('/api', procurementRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
-app.use('/api', bidproposalRoutes);
+app.use('/api', bidproposalRoutesBuyer);
+app.use('/api', procurementBidRoutes);
+app.use('/api', bidDocumentRoutes);
+app.use('/api', bidProposalRoutes);
+
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:
@@ -52,7 +60,15 @@ app.listen(serverConfig.port, () => {
     - GET /api/procurement-requests/buyer - Get all procurement requests (buyers only)
     - GET /api/procurement-requests/favorites - Get favorite procurement requests (sellers only)
     - POST /api/procurement-requests/:id/follow - Follow (add to favorites) procurement request (sellers only)
-    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)`);
+    - DELETE /api/procurement-requests/:id/unfollow - Unfollow (remove from favorites) procurement request (sellers only)
+    - POST /api/bid/create - Create a new bid (sellers only)
+    - PUT /api/bid/:id/update - Update a bid that's not submitted (sellers only)
+    - PUT /api/bid/:id/submit - Submit a bid (sellers only)
+    - GET /api/bid/:id/preview - Preview a bid (sellers only)
+    - POST /bid-documents/upload - Upload bid document (sellers only)
+    - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
+    - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request
+    - GET /api/bids/user/:userId - Fetch all seller's bids`);
 });
 
 
