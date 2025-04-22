@@ -18,13 +18,14 @@ exports.getBuyerProcurementRequests = async (buyerId) => {
 
     const requests = await procurementRequestRepository.getProcurementRequests(queryOptions); 
     
-    return requests.map(request => {
+    /*return requests.map(request => {
       const plain = request.get({ plain: true });
 
       plain.procurementCategory = plain.procurementCategory?.name || null;
 
       return plain;
-    });
+    });*/
+    return requests;
 }
 
 exports.addFavorite = async (userId, requestId) => {
