@@ -65,6 +65,13 @@ exports.getBuyerProcurementRequests = async (req, res) => {
             return res.status(404).json({ message: 'No procurement requests found' });
         }
 
+        for(const request of requests) {
+          if(request.status === 'active' && new Date(request.deadline) < new Date()) {
+            request.status = 'closed';
+            request.updated_at = new Date();
+            await request.save();
+          }
+        }
         res.status(200).json({ requests });
       } catch (error) {
         console.error('Error fetching procurement requests:', error);
