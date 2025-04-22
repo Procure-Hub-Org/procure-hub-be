@@ -199,12 +199,22 @@ module.exports = {
       if (procurementRequest.status === status) {
         return res.status(400).json({ message: 'Status is already set to the requested value' });
       }
+
+      //check if the status can be changed from current status to new status
+      /*if (procurementRequest.status === 'draft' && status != 'active') {
+        return res.status(400).json({ message: 'Status from draft can only be changed to active' });
+      }if (procurementRequest.status === 'active' && status != 'awarded' && status != 'closed') {
+        return res.status(400).json({ message: 'Status from active can only be change to awarded or closed' });
+      }if(procurementRequest.status === 'awarded'){
+        return res.status(400).json({ message: 'Status cannot be changed from awarded' });
+      }*/
+
       //allowed status transitions 
       const allowedTransitions = {
       draft: ['active'],
       active: ['closed', 'frozen'],
       frozen: ['active', 'closed'],
-      closed: ['awarded'],
+      closed: ['awarded', 'frozen'],
     };
     
     //get valid next statuses for current status
@@ -214,6 +224,7 @@ module.exports = {
     if (!validNextStatuses.includes(status)) {
       return res.status(400).json({ message: `Status cannot be changed from ${procurementRequest.status} to ${status}` });
     }
+
       //update the status to newStatus
       procurementRequest.status = status;
       procurementRequest.updated_at = new Date();

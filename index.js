@@ -10,12 +10,11 @@ const procurementRoutesBuyer = require('./src/routes/procurementRoutes.js');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const buyerTypeRoutes = require('./src/routes/buyerTypeRoutes.js');
 const procurementRoutes = require('./src/routes/procurementRequestRoutes.js');
+const bidproposalRoutesBuyer = require('./src/routes/buyerBidProposalRoutes.js');
 const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
 const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
 const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
-
-
 
 const app = express();
 
@@ -38,10 +37,10 @@ app.use('/api', criteriaRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
 app.use('/api', procurementRoutes);
+app.use('/api', bidproposalRoutesBuyer);
 app.use('/api', procurementBidRoutes);
 app.use('/api', bidDocumentRoutes);
 app.use('/api', bidProposalRoutes);
-
 
 app.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
