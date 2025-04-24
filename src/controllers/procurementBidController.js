@@ -1,6 +1,6 @@
-const { ProcurementBid, ProcurementRequest } = require('../../database/models');
+const { ProcurementBid, ProcurementRequest, User } = require('../../database/models');
 
-
+// get all bids by a seller with related procurement request and buyer details
 const getSellerBids = async (req, res) => {
 
     try {
@@ -14,7 +14,14 @@ const getSellerBids = async (req, res) => {
             {
               model: ProcurementRequest,
               as: 'procurementRequest',
-              attributes: ['title', 'bid_edit_deadline'],
+              attributes: ['title', 'bid_edit_deadline', 'deadline'],
+              include: [
+                {
+                  model: User,
+                  as: 'buyer',
+                  attributes: ['first_name', 'last_name', 'company_name'],
+                },
+              ]
             },
           ],
           order: [['submitted_at', 'DESC']],
