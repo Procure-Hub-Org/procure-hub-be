@@ -25,9 +25,6 @@ exports.createBid = async (req, res) => {
         if (!request) {
             return res.status(400).json({ message: 'Procurement request not found' });
         }
-        if (new Date() > new Date(request.bid_edit_deadline)){
-            return res.status(400).json({ message: 'Procurement request deadline has passed!' });
-        }
         if (request.status !== 'active') {
             return res.status(400).json({ message: 'Procurement request is not active.' });
         }
@@ -99,9 +96,6 @@ exports.updateDraftBid = async (req, res) => {
         return res.status(400).json({ message: 'Procurement request not found' });
       }
 
-      if(request.bid_edit_deadline < new Date()){
-        return res.status(400).json({ message: 'Procurement request deadline has passed!' });
-      }
       if (request.status !== 'active') {
         return res.status(400).json({ message: 'Procurement request is not active.' });
       }
