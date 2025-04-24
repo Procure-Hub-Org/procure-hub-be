@@ -39,7 +39,7 @@ const generateBidAlerts = async (db, procurementRequestId) => {
     // Uslov 1: Više od 3 izmene na bidu
     if (bid.adminLogs.length > 3) {
       alerts.push({
-        alert: `User ${bid.seller.first_name} ${bid.seller.last_name} updated his bid more than 3 times.`,
+        alert: `User ${bid.seller.first_name} ${bid.seller.last_name} updated their bid more than 3 times.`,
         procurement_request_id: procurementRequestId,
       });
     }
@@ -47,7 +47,7 @@ const generateBidAlerts = async (db, procurementRequestId) => {
     // Uslov 2: Bid postavljen manje od 30 minuta pre zatvaranja procurementa
     if (procurementCloseTime.diff(bidSubmissionTime, 'minutes') <= 30) {
       alerts.push({
-        alert: `User ${bid.seller.first_name} ${bid.seller.last_name} made a bid with less than 30 minutes before closing the procurement.`,
+        alert: `User ${bid.seller.first_name} ${bid.seller.last_name} made a bid within 30 minutes before closing the procurement.`,
         procurement_request_id: procurementRequestId,
       });
     }
