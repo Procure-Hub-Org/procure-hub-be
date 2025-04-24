@@ -97,12 +97,9 @@ exports.updateDraftBid = async (req, res) => {
       // Build an object with only the fields that are present
       const updatedFields = {};
       if (price !== undefined){
-        // Check if the price is within the procurement request budget range
+        // Check if the price has valid value
         if (!request) {
             return res.status(400).json({ message: 'Procurement request not found' });
-        }
-        if (price < request.budget_min || price > request.budget_max) {
-            return res.status(400).json({ message: 'Price must be within the budget range.'});
         }
         if (price < 0) {
             return res.status(400).json({ message: 'Price cannot be negative.'});
