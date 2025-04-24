@@ -33,10 +33,7 @@ exports.createBid = async (req, res) => {
         }
 
 
-        // Check if bid price is within the procurement request budget range
-        if (price < request.budget_min || price > request.budget_max) {
-            return res.status(400).json({ message: 'Price must be within the budget range.'});
-        }
+        // Check if price has positive value
         if (price < 0) {
             return res.status(400).json({ message: 'Price cannot be negative.'});
         }
