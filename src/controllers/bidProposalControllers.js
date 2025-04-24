@@ -51,6 +51,17 @@ exports.createBid = async (req, res) => {
             submitted_at: submitted ? new Date() : null,
         });
 
+        // Creates admin log for created bid
+        const adminLog = await adminLog.create({
+            procurement_bid_id: bid.id,
+            user_id: user.id,
+            action: submitted ? 'submit' : 'draft',
+        });
+
+        if (!adminLog) {
+            return res.status(500).json({ message: 'Failed to create admin log' });
+        }
+
         return res.status(200).json({ message: 'Bid created successfully', bid });
 
     } catch (error) {
@@ -116,6 +127,17 @@ exports.updateDraftBid = async (req, res) => {
   
       // Update the bid with the provided fields
       await bid.update(updatedFields);
+
+      // Creates admin log for created bid
+      const adminLog = await adminLog.create({
+          procurement_bid_id: bid.id,
+          user_id: req.user.id,
+          action: 'update',
+      });
+
+      if (!adminLog) {
+          return res.status(500).json({ message: 'Failed to create admin log' });
+      }
   
       return res.status(200).json({ message: 'Bid updated successfully', bid });
   
@@ -164,6 +186,17 @@ exports.submitDraftBid = async (req, res) => {
         await bid.update({
             submitted_at: new Date(),
         });
+
+        // Creates admin log for created bid
+        const adminLog = await adminLog.create({
+            procurement_bid_id: bid.id,
+            user_id: req.user.id,
+            action: 'submit',
+        });
+
+        if (!adminLog) {
+            return res.status(500).json({ message: 'Failed to create admin log' });
+        }
 
         return res.status(200).json({ message: 'Bid submitted successfully', bid });
 
