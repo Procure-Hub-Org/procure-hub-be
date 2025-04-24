@@ -1,4 +1,4 @@
-const {ProcurementBid, User, ProcurementRequest} = require('../../database/models');
+const {ProcurementBid, User, ProcurementRequest, AdminLog} = require('../../database/models');
 
 
 exports.createBid = async (req, res) => {
@@ -52,7 +52,7 @@ exports.createBid = async (req, res) => {
         });
 
         // Creates admin log for created bid
-        const adminLog = await adminLog.create({
+        const adminLog = await AdminLog.create({
             procurement_bid_id: bid.id,
             user_id: user.id,
             action: submitted ? 'submit' : 'draft',
@@ -129,7 +129,7 @@ exports.updateDraftBid = async (req, res) => {
       await bid.update(updatedFields);
 
       // Creates admin log for created bid
-      const adminLog = await adminLog.create({
+      const adminLog = await AdminLog.create({
           procurement_bid_id: bid.id,
           user_id: req.user.id,
           action: 'update',
@@ -188,7 +188,7 @@ exports.submitDraftBid = async (req, res) => {
         });
 
         // Creates admin log for created bid
-        const adminLog = await adminLog.create({
+        const adminLog = await AdminLog.create({
             procurement_bid_id: bid.id,
             user_id: req.user.id,
             action: 'submit',
