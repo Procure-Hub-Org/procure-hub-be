@@ -25,7 +25,7 @@ exports.createBid = async (req, res) => {
         if (!request) {
             return res.status(400).json({ message: 'Procurement request not found' });
         }
-        if (new Date() > new Date(request.deadline)){
+        if (new Date() > new Date(request.bid_edit_deadline)){
             return res.status(400).json({ message: 'Procurement request deadline has passed!' });
         }
         if (request.status !== 'active') {
@@ -33,10 +33,7 @@ exports.createBid = async (req, res) => {
         }
 
 
-        // Check if bid price is within the procurement request budget range
-        if (price < request.budget_min || price > request.budget_max) {
-            return res.status(400).json({ message: 'Price must be within the budget range.'});
-        }
+        // Check if price has positive value
         if (price < 0) {
             return res.status(400).json({ message: 'Price cannot be negative.'});
         }
@@ -53,6 +50,17 @@ exports.createBid = async (req, res) => {
             submitted_at: currentDate,
             submitted_at: submitted ? new Date() : null,
         });
+
+        // Creates admin log for created bid
+        const adminLog = await adminLog.create({
+            procurement_bid_id: bid.id,
+            user_id: user.id,
+            action: submitted ? 'submit' : 'draft',
+        });
+
+        if (!adminLog) {
+            return res.status(500).json({ message: 'Failed to create admin log' });
+        }
 
         return res.status(200).json({ message: 'Bid created successfully', bid });
 
@@ -91,7 +99,7 @@ exports.updateDraftBid = async (req, res) => {
         return res.status(400).json({ message: 'Procurement request not found' });
       }
 
-      if(request.deadline < new Date()){
+      if(request.bid_edit_deadline < new Date()){
         return res.status(400).json({ message: 'Procurement request deadline has passed!' });
       }
       if (request.status !== 'active') {
@@ -100,12 +108,9 @@ exports.updateDraftBid = async (req, res) => {
       // Build an object with only the fields that are present
       const updatedFields = {};
       if (price !== undefined){
-        // Check if the price is within the procurement request budget range
+        // Check if the price has valid value
         if (!request) {
             return res.status(400).json({ message: 'Procurement request not found' });
-        }
-        if (price < request.budget_min || price > request.budget_max) {
-            return res.status(400).json({ message: 'Price must be within the budget range.'});
         }
         if (price < 0) {
             return res.status(400).json({ message: 'Price cannot be negative.'});
@@ -122,6 +127,17 @@ exports.updateDraftBid = async (req, res) => {
   
       // Update the bid with the provided fields
       await bid.update(updatedFields);
+
+      // Creates admin log for created bid
+      const adminLog = await adminLog.create({
+          procurement_bid_id: bid.id,
+          user_id: req.user.id,
+          action: 'update',
+      });
+
+      if (!adminLog) {
+          return res.status(500).json({ message: 'Failed to create admin log' });
+      }
   
       return res.status(200).json({ message: 'Bid updated successfully', bid });
   
@@ -170,6 +186,17 @@ exports.submitDraftBid = async (req, res) => {
         await bid.update({
             submitted_at: new Date(),
         });
+
+        // Creates admin log for created bid
+        const adminLog = await adminLog.create({
+            procurement_bid_id: bid.id,
+            user_id: req.user.id,
+            action: 'submit',
+        });
+
+        if (!adminLog) {
+            return res.status(500).json({ message: 'Failed to create admin log' });
+        }
 
         return res.status(200).json({ message: 'Bid submitted successfully', bid });
 
