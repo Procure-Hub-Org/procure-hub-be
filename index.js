@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const socketIO = require('socket.io');
+const http = require('http');   // potrebno za socket.io
 const serverConfig = require('./src/config/server');
 const frontendConfig = require('./src/config/frontend');
 const userRoutes = require('./src/routes/userRoutes.js'); 
@@ -15,8 +17,15 @@ const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
 const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
 const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
+const { initSocket } = require('./src/config/socket.js');   // init socket.io
 
 const app = express();
+
+// Inicijalizacija servera (potrebno za socket.io)
+const server = http.createServer(app);
+
+// Inicijalizacije socket.io
+initSocket(server);
 
 // za slike
 app.use('/uploads', express.static('public/uploads'));
@@ -42,7 +51,7 @@ app.use('/api', procurementBidRoutes);
 app.use('/api', bidDocumentRoutes);
 app.use('/api', bidProposalRoutes);
 
-app.listen(serverConfig.port, () => {
+server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:
     - POST /api/user/register - Register user
