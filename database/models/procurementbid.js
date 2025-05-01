@@ -28,6 +28,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'procurement_bid_id',
         as: 'adminLogs',
       });
+      ProcurementBid.belongsTo(models.Auction, {
+        foreignKey: 'auction_id',
+        as: 'auction',
+      });
+      
     }
   }
 
@@ -63,6 +68,23 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      auction_price: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+      },
+      price_submitted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      auction_placement: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      auction_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      
     },
     {
       sequelize,
