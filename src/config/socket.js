@@ -14,6 +14,17 @@ const initSocket = (server) => {
 
     io.on('connection', (socket) => {
         console.log('WebSocket connected:', socket.id);
+
+        socket.on('joinAuctionRoom', async (auctionId) => {
+          socket.join(`auction-${auctionId}`);
+          try {
+              const data = await getLiveAuctionData(auctionId);
+              socket.emit('auctionData', data);
+          } catch (error) {
+              socket.emit('error', { message: error.message });
+          }
+        });
+
         socket.on('disconnect', () => {
           console.log('WebSocket disconnected:', socket.id);
         });
