@@ -9,7 +9,8 @@ const {
   EvaluationCriteria
 } = require("../../database/models");
 
-const { Op } = require("sequelize");
+// const { Op } = require("sequelize");
+const { Op, Sequelize } = require('sequelize');
 
 module.exports = {
   createProcurementRequest: async (req, res) => {
@@ -626,5 +627,47 @@ module.exports = {
       res.status(500).json({ message: 'Error fetching bids for procurement request' });
     }
 
+  },
+  // GET route to fetch closed procurement requests without auctions for dropdown
+  getClosedRequestsWithoutAuction: async (req, res) => {
+    try {
+      const buyerId = req.user.id;
+      
+      // First, check if the user is active
+      if(req.user.status !== 'active') {
+        return res.status(403).json({ 
+          message: 'Your account is not active. Please contact support.' 
+        });
+      }
+      
+      // Get all closed procurement requests for this buyer that don't have auctions
+      const requests = await ProcurementRequest.findAll({
+        attributes: ['id', 'title'], // Only return id and title for dropdown
+        where: {
+          buyer_id: buyerId,
+          status: 'closed',
+          // Exclude those that already have auctions
+          id: {
+            [Op.notIn]: Sequelize.literal(`(
+              SELECT COALESCE(procurement_request_id, 0) 
+              FROM auctions
+            )`)
+          }
+        },
+        order: [['updated_at', 'DESC']] // Most recently closed first
+      });
+      
+      return res.status(200).json({
+        count: requests.length,
+        requests: requests
+      });
+      
+    } catch (error) {
+      console.error('Error fetching closed requests without auctions:', error);
+      return res.status(500).json({ 
+        message: 'An error occurred while fetching procurement requests',
+        error: error.message 
+      });
+    }
   },
 };
