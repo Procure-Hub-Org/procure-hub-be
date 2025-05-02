@@ -3,7 +3,7 @@ const { Auction, ProcurementBid, ProcurementRequest, User } = require('../../dat
 const getLiveAuctionData = async (auctionId) => {
     const auction = await Auction.findOne({
         where: { id: auctionId },
-        attributes: ['ending_time', 'last_call_timer'],
+        attributes: ['ending_time', 'last_call_timer', 'min_increment'],
         include: [
             {
                 model: ProcurementBid,
@@ -18,7 +18,7 @@ const getLiveAuctionData = async (auctionId) => {
                     {
                         model: ProcurementRequest,
                         as: 'procurementRequest',
-                        attributes: [],
+                        attributes: ['title'],
                         include: [
                             {
                                 model: User,
@@ -41,12 +41,15 @@ const getLiveAuctionData = async (auctionId) => {
     return {
         ending_time: auction.ending_time,
         last_call_timer_seconds: auction.last_call_timer * 60,
+        min_increment: auction.min_increment,
         sellers: sortedBids.map((bid) => ({
             seller: bid.seller,
             auction_price: bid.auction_price,
-            auction_placement: bid.auction_placement,
-            buyer: bid.procurementRequest?.buyer || null
-        }))
+            auction_placement: bid.auction_placement
+        })),
+        buyer: auction.bids[0]?.procurementRequest?.buyer || null,
+        procurementRequest: auction.bids[0]?.procurementRequest || null,
+        title: auction.bids[0]?.procurementRequest?.title || null,
     };
 };
 
