@@ -40,7 +40,8 @@ const getLiveAuctionData = async (auctionId) => {
 
     return {
         ending_time: auction.ending_time,
-        last_call_timer_seconds: auction.last_call_timer * 60,
+        /*last_call_timer_seconds: auction.last_call_timer * 60,*/
+        last_call_timer : auction.last_call_timer,
         min_increment: auction.min_increment,
         sellers: sortedBids.map((bid) => ({
             seller: bid.seller,
