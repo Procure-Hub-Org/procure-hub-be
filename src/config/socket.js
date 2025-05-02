@@ -3,6 +3,7 @@ const socketIO = require('socket.io');
 let io;
 
 const initSocket = (server) => {
+    //console.log('Initializing Socket.IO...');
     io = socketIO(server, {
         cors: {
             origin: process.env.FRONTEND_URL || '*',

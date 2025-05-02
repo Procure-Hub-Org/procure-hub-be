@@ -1,4 +1,4 @@
-const { Auction, ProcurementBid, User } = require('../models');
+const { Auction, ProcurementBid, User } = require('../../database/models'); 
 
 const getLiveAuctionData = async (auctionId) => {
     const auction = await Auction.findOne({
