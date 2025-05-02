@@ -1,4 +1,5 @@
 const socketIO = require('socket.io');
+const auctionService = require('../services/auctionService');
 
 let io;
 
@@ -14,6 +15,23 @@ const initSocket = (server) => {
 
     io.on('connection', (socket) => {
         console.log('WebSocket connected:', socket.id);
+
+        socket.on('joinAuctionRoom', async (auctionId) => {
+            socket.join(`auction-${auctionId}`);
+            console.log(`User ${socket.id} joined auction room: auction-${auctionId}`);
+        });
+
+        socket.on('placeBid', async (data) => {
+            try {
+                const { auctionId, price, userId } = data;
+                const updatedBid = await auctionService.placeBid({ auctionId, price, userId });
+
+                socket.to(`auction-${auctionId}`).emit('bid_placed', updatedBid); 
+            } catch (error) {
+                console.error("Error placing bid: ", error.message);
+                socket.emit('bid_error', { message: error.message });
+            }
+        });
         socket.on('disconnect', () => {
           console.log('WebSocket disconnected:', socket.id);
         });
