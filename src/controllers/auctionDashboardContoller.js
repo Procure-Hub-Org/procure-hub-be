@@ -10,7 +10,7 @@ const getDashboard = async (req, res) => {
 
       if (role === 'admin') {
         const adminData = await getAdminDashboard(userId);
-        return res.status(200).json(sellerData);
+        return res.status(200).json(adminData);
       }
   
       if (role === 'buyer') {

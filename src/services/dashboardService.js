@@ -202,7 +202,6 @@ const getAdminDashboard = async () => {
   for (const auction of auctions) {
     const auctionData = auction.get({ plain: true });
 
-    // Određivanje statusa
     let status = 'active';
     if (now < auction.starting_time) {
       status = 'to_be';
@@ -213,7 +212,6 @@ const getAdminDashboard = async () => {
     let winningBidInfo = null;
 
     if (status === 'happened') {
-      // Tražimo pobjedničku ponudu (placement = 1)
       const winningBid = await ProcurementBid.findOne({
         where: {
           auction_id: auction.id,
