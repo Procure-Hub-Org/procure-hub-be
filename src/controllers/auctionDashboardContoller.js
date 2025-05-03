@@ -1,5 +1,6 @@
-const { getBuyerDashboard } = require('../services/buyerDashboardService.js');
-const { getSellerDashboard } = require('../services/sellerDashboardService.js');
+const { getBuyerDashboard } = require('../services/dashboardService.js');
+const { getSellerDashboard } = require('../services/dashboardService.js');
+const { getAdminDashboard } = require('../services/dashboardService.js');
 
 // Razdvajanje po ulogama
 const getDashboard = async (req, res) => {
@@ -8,7 +9,8 @@ const getDashboard = async (req, res) => {
       const userId = req.user.id;
 
       if (role === 'admin') {
-
+        const adminData = await getAdminDashboard(userId);
+        return res.status(200).json(sellerData);
       }
   
       if (role === 'buyer') {
