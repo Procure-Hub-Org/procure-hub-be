@@ -1,3 +1,4 @@
+const { getBuyerDashboard } = require('../services/buyerDashboardService.js');
 const { getSellerDashboard } = require('../services/sellerDashboardService.js');
 
 // Razdvajanje po ulogama
@@ -11,7 +12,8 @@ const getDashboard = async (req, res) => {
       }
   
       if (role === 'buyer') {
-
+        const buyerData = await getBuyerDashboard(userId);
+        return res.status(200).json(buyerData);
       }
   
       if (role === 'seller') {
