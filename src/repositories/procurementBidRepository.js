@@ -17,10 +17,8 @@ exports.getProcurementBid = async (query) => {
 exports.updateProcurementBid = async (procurementBidId, updates) => {
     try {
         const [updatedRows, [procurementBid]] = await db.ProcurementBid.update(updates, {
-            where: {
-                id: procurementBidId,
-                returning: true
-            }
+            where: { id: procurementBidId },
+            returning: true
         });
 
         return procurementBid;

@@ -6,6 +6,7 @@ exports.placeBid = async ({auctionId, price, userId}) => {
     const now = new Date();
     const auction = await auctionRepository.getAuction(auctionId);
     const procurementBid = await procurementBidRepository.getProcurementBid({auction_id: auctionId, seller_id: userId});
+    let lastCall = false;
 
     if (!auction || new Date(auction.ending_time) < now) {
         const err = new Error('Auction has ended or does not exist');
@@ -23,8 +24,20 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         throw err;
     }
 
-    const allAuctionBids = await procurementBidRepository.getAllProcurementBidsByAuctionId({auction_id: auctionId});
+    const allAuctionBids = await procurementBidRepository.getAllProcurementBidsByAuctionId(auctionId);
     const position = findBidPosition(allAuctionBids, price);
+
+    const bidsToUpdate = allAuctionBids.filter(bid => (bid.auction_placement >= position && bid.auction_placement < procurementBid.auction_placement && bid.id !== procurementBid.id));
+    for (const bid of bidsToUpdate) {
+        const sideBid = await procurementBidRepository.updateProcurementBid(bid.id, {
+            auction_placement: bid.auction_placement + 1,
+        });
+        if (!sideBid) {
+            const err = new Error('Failed to update bid placement');
+            err.statusCode = 500;
+            throw err;
+        }
+    }
 
     const updatedBid = await procurementBidRepository.updateProcurementBid(procurementBid.id, {
         auction_price: price, 
@@ -36,17 +49,20 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         err.statusCode = 500;
         throw err;
     }
-    
-    if (updatedBid.price_submitted_at > new Date(auction.ending_time - auction.last_call_timer)) {
-        const auction = await auctionRepository.updateAuctionEndingTime(auctionId, new Date(auction.ending_time + auction.last_call_timer));
-        if (!auction) {
+
+    const lastCallThreshold = new Date(auction.ending_time.getTime() - auction.last_call_timer * 60_000);
+    if (updatedBid.price_submitted_at > lastCallThreshold && updatedBid.auction_placement === 1) {
+        console.log('Updating auction ending time...');
+        const updatedAuction = await auctionRepository.updateAuctionEndingTime(auctionId, new Date(auction.ending_time.getTime() + auction.last_call_timer * 60_000));
+        if (!updatedAuction) {
             const err = new Error('Failed to update auction ending time');
             err.statusCode = 500;
             throw err;
         }
+        lastCall = true;
     }
 
-    return updatedBid;
+    return {updatedBid, lastCall};
 }
 
 const findBidPosition = (allAuctionBids, newBidPrice) => {
