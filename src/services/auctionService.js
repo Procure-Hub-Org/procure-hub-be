@@ -1,6 +1,12 @@
 const procurementBidRepository = require('../repositories/procurementBidRepository');
 const auctionRepository = require('../repositories/auctionRepository');
+const {User: User} = require("../../database/models");
+const {ProcurementRequest: ProcurementRequest} = require("../../database/models");
+
 const { getIO } = require('../config/socket');
+
+const { sendMail } = require('../services/mailService.js'); // Import sendMail function from mailService.js
+
 
 exports.placeBid = async ({auctionId, price, userId}) => {
     const now = new Date();
@@ -31,6 +37,15 @@ exports.placeBid = async ({auctionId, price, userId}) => {
     const position = findBidPosition(allAuctionBids, price);
 
     const bidsToUpdate = allAuctionBids.filter(bid => (bid.auction_placement >= position && bid.auction_placement < procurementBid.auction_placement && bid.id !== procurementBid.id));
+
+    // curent leader
+    const previousLeader = allAuctionBids.find(bid => bid.auction_placement === 1 && bid.id !== procurementBid.id);
+    let previousLeaderUser = null;
+
+    if (previousLeader) {
+        previousLeaderUser = await User.findByPk(previousLeader.seller_id);
+    }
+
     for (const bid of bidsToUpdate) {
         const sideBid = await procurementBidRepository.updateProcurementBid(bid.id, {
             auction_placement: bid.auction_placement + 1,
@@ -40,6 +55,15 @@ exports.placeBid = async ({auctionId, price, userId}) => {
             err.statusCode = 500;
             throw err;
         }
+    }
+
+    const procurementRequest = await ProcurementRequest.findByPk(auction.procurement_request_id);
+    if (position === 1 && previousLeaderUser && previousLeaderUser.email) {
+        await sendMail({
+            to: previousLeaderUser.email,
+            subject: 'You have been outbid',
+            text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". You are no longer in the first place.`,
+        });
     }
 
     const updatedBid = await procurementBidRepository.updateProcurementBid(procurementBid.id, {
