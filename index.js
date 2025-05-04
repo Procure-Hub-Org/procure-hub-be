@@ -17,6 +17,9 @@ const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
 const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
 const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
+const autionCreationRoutes= require('./src/routes/auctionbuyerRoutes.js');
+const auctionRoutes = require('./src/routes/auctionRoutes.js'); 
+
 const { initSocket } = require('./src/config/socket.js');   // init socket.io
 const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js');
 
@@ -52,6 +55,8 @@ app.use('/api', procurementBidRoutes);
 app.use('/api', bidDocumentRoutes);
 app.use('/api', bidProposalRoutes);
 app.use('/api', auctionDashboardRoutes);
+app.use('/api', autionCreationRoutes);
+app.use('/api', auctionRoutes);
 
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);

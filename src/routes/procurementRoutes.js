@@ -17,6 +17,9 @@ router.patch('/procurement/:id/update',verifyToken, procurementController.update
 // GET route to get all details for a specific procurement request
 router.get('/procurement-request/:id',verifyToken, procurementController.getProcurementRequestDetails);
 
+// GET route to fetch closed procurement requests without auctions for dropdown
+router.get('/procurement/closed-without-auction', verifyToken, procurementController.getClosedRequestsWithoutAuction);
+
 // GET route to get all bids for a specific procurement request
 router.get('/procurement/:id/bids',verifyToken, procurementController.getBidsForProcurement);
 module.exports = router;

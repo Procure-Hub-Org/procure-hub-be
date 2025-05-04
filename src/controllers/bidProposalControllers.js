@@ -29,6 +29,17 @@ exports.createBid = async (req, res) => {
             return res.status(400).json({ message: 'Procurement request is not active.' });
         }
 
+        const existingBid = await ProcurementBid.findOne({
+          where: {
+            seller_id: user.id,
+            procurement_request_id: procurement_request_id,
+          },
+        });
+        
+        if (existingBid) {
+          return res.status(500).json({ message: 'Seller has already submitted a bid for this procurement request.' });
+        }
+
 
         // Check if price has positive value
         if (price < 0) {
@@ -46,6 +57,7 @@ exports.createBid = async (req, res) => {
             proposal_text,
             submitted_at: currentDate,
             submitted_at: submitted ? new Date() : null,
+            auction_price: price,
         });
 
         // Creates admin log for created bid
