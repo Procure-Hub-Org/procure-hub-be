@@ -52,11 +52,10 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         err.statusCode = 500;
         throw err;
     }
-
-    const lastCallThreshold = new Date(auction.ending_time.getTime() - auction.last_call_timer * 60_000);
+    const lastCallThreshold = new Date(new Date(auction.ending_time).getTime() - auction.last_call_timer * 60_000);
     if (updatedBid.price_submitted_at > lastCallThreshold && updatedBid.auction_placement === 1) {
         console.log('Updating auction ending time...');
-        const updatedAuction = await auctionRepository.updateAuctionEndingTime(auctionId, new Date(updatedBid.price_submitted_at.getTime() + auction.last_call_timer * 60_000));
+        const updatedAuction = await auctionRepository.updateAuctionEndingTime(auctionId, new Date(new Date(updatedBid.price_submitted_at).getTime() + auction.last_call_timer * 60_000));
                                                                                 //before: new Date(auction.ending_time.getTime() + auction.last_call_timer * 60_000)
         if (!updatedAuction) {
             const err = new Error('Failed to update auction ending time');
