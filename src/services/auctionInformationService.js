@@ -3,7 +3,7 @@ const { Auction, ProcurementRequest, ProcurementBid, User } = require('../../dat
 const getLiveAuctionData = async (auctionId) => {
     const auction = await Auction.findOne({
         where: { id: auctionId },
-        attributes: ['ending_time', 'last_call_timer', 'min_increment', 'procurement_request_id']
+        attributes: ['ending_time', 'last_call_timer', 'min_increment', 'procurement_request_id', 'starting_time']
     });
 
     if (!auction) {
@@ -43,6 +43,7 @@ const getLiveAuctionData = async (auctionId) => {
     const sortedBids = bids.sort((a, b) => a.auction_placement - b.auction_placement);
 
     return {
+        starting_time: auction.starting_time,
         ending_time: auction.ending_time,
         last_call_timer: auction.last_call_timer,
         min_increment: auction.min_increment,
