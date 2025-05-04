@@ -59,7 +59,7 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         await sendMail({
             to: previousLeaderUser.email,
             subject: 'You have been outbid',
-            text: `Respected ${previousLeader.first_name} ${previousLeader.last_name}, \n Someone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". You are no longer in the first place.`,
+            text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". You are no longer in the first place.`,
         });
     }
 
