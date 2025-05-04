@@ -4,11 +4,14 @@ const { getIO } = require('../config/socket');
 
 exports.placeBid = async ({auctionId, price, userId}) => {
     const now = new Date();
+    const utcNow = new Date(now.toISOString());
     const auction = await auctionRepository.getAuction(auctionId);
     const procurementBid = await procurementBidRepository.getProcurementBid({auction_id: auctionId, seller_id: userId});
     let lastCall = false;
+    const auctionEndUtc = new Date(auction.ending_time);
 
-    if (!auction || new Date(auction.ending_time) < now) {
+    // if (!auction || new Date(auction.ending_time) < now) {
+        if (!auction || auctionEndUtc < utcNow){
         const err = new Error('Auction has ended or does not exist');
         err.statusCode = 400;
         throw err;

@@ -25,11 +25,11 @@ const createAuction = async (req, res) => {
 
     const newAuction = await Auction.create({
       procurement_request_id: procurement_id,
-      starting_time: start,
+      starting_time: start.toISOString(),
       duration,
       min_increment: min_bid_increment,
       last_call_timer,
-      ending_time
+      ending_time: ending_time.toISOString()
     });
 
     const bids = await ProcurementBid.findAll({
