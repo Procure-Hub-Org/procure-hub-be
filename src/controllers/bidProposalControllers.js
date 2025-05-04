@@ -29,6 +29,17 @@ exports.createBid = async (req, res) => {
             return res.status(400).json({ message: 'Procurement request is not active.' });
         }
 
+        const existingBid = await ProcurementBid.findOne({
+          where: {
+            seller_id: user.id,
+            procurement_request_id: procurement_request_id,
+          },
+        });
+        
+        if (existingBid) {
+          throw new Error('Seller has already submitted a bid for this procurement request.');
+        }
+
 
         // Check if price has positive value
         if (price < 0) {
