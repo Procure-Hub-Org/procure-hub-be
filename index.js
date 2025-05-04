@@ -17,7 +17,9 @@ const criteriaRoutes = require('./src/routes/criteriaRoutes.js');
 const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
 const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
+const autionCreationRoutes= require('./src/routes/auctionbuyerRoutes.js');
 const auctionRoutes = require('./src/routes/auctionRoutes.js'); 
+
 const { initSocket } = require('./src/config/socket.js');   // init socket.io
 
 const app = express();
@@ -51,6 +53,7 @@ app.use('/api', bidproposalRoutesBuyer);
 app.use('/api', procurementBidRoutes);
 app.use('/api', bidDocumentRoutes);
 app.use('/api', bidProposalRoutes);
+app.use('/api', autionCreationRoutes);
 app.use('/api', auctionRoutes);
 
 server.listen(serverConfig.port, () => {
