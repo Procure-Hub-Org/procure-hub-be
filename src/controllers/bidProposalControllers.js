@@ -46,6 +46,7 @@ exports.createBid = async (req, res) => {
             proposal_text,
             submitted_at: currentDate,
             submitted_at: submitted ? new Date() : null,
+            auction_price: price,
         });
 
         // Creates admin log for created bid

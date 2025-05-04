@@ -9,7 +9,7 @@ const getSellerBids = async (req, res) => {
         const userBids = await ProcurementBid.findAll({
 
           where: { seller_id: userId },
-          attributes: ['id', 'price', 'timeline', 'proposal_text', 'submitted_at'],
+          attributes: ['id', 'price', 'timeline', 'proposal_text', 'submitted_at','auction_price'],
           include: [
             {
               model: ProcurementRequest,
