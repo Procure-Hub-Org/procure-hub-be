@@ -37,7 +37,7 @@ exports.createBid = async (req, res) => {
         });
         
         if (existingBid) {
-          throw new Error('Seller has already submitted a bid for this procurement request.');
+          return res.status(500).json({ message: 'Seller has already submitted a bid for this procurement request.' });
         }
 
 
