@@ -51,32 +51,10 @@ const getSellerDashboard = async (userId) => {
     if (now < auction.starting_time) { status = 'to_be'; } 
     else if (now > auction.ending_time) { status = 'happened'; }
     
-    // Na osnovu statusa se vraca ili winner bid ili trenutni plasman za sellera
+    // Na osnovu statusa se vraca trenutni ili ukupni plasman za sellera
     let relevantBids = [];
-
-    if (status === 'happened') {
-      const winningBid = await ProcurementBid.findOne({
-        where: { 
-          auction_id: auction.id, 
-          auction_placement: 1 
-        },
-        include: [{ 
-            model: User, 
-            as: 'seller', 
-            attributes: ['first_name', 'last_name', 'company_name'] 
-          }]
-      });
-
-      if (winningBid) {
-        relevantBids.push({
-          auction_price: winningBid.auction_price,
-          sellerName: `${winningBid.seller.first_name} ${winningBid.seller.last_name}`,
-          sellerCompany: winningBid.seller.company_name
-        });
-      }
-    } 
-
-    else if (status === 'active') {
+    
+    if (status === 'active' || status === 'happened') {
       const sellerBids = await ProcurementBid.findAll({
         where: {
           auction_id: auction.id,
@@ -84,10 +62,10 @@ const getSellerDashboard = async (userId) => {
         },
         attributes: ['auction_price', 'auction_placement', 'submitted_at']
       });
-
+  
       relevantBids = sellerBids.map(bid => bid.get({ plain: true }));
-
     }
+
   
     // sastavljanje u jedan odgovor
     enhanced.push({
