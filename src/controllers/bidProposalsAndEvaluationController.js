@@ -6,7 +6,8 @@ const {
   BidEvaluation,
   EvaluationCriteria,
   CriteriaType,
-  ProcurementCategory
+  ProcurementCategory,
+  Auction
 } = require('../../database/models');
 const { Op } = require('sequelize');
 const getBidProposals = async (req, res) => {
@@ -35,9 +36,19 @@ if (procurement.procurement_category_id) {
     attributes: ['name']
   });
 }
-    const procurementBids = await ProcurementBid.findAll({
-      where: { procurement_request_id: procurement.id }
-    });
+// Dohvati aukciju ako postoji
+const auction = await Auction.findOne({
+  where: { procurement_request_id: procurement.id }
+});
+
+const now = new Date();
+const auctionHeld = auction ? new Date(auction.ending_time) < now : false;
+
+const procurementBids = await ProcurementBid.findAll({
+  where: { procurement_request_id: procurement.id },
+  attributes: ['id', 'seller_id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price']
+});
+
 
     const bids = await Promise.all(
       procurementBids.map(async (bid) => {
@@ -127,7 +138,9 @@ if (procurement.procurement_category_id) {
           })),
           evaluations: criteriaEvaluations,
           finalScore: finalScore,
-          evaluationStatus: evaluationStatus
+          evaluationStatus: evaluationStatus,
+          auctionHeld: auctionHeld,
+          bidAuctionPrice: auctionHeld ? (bid.auction_price?.toString() || bid.price?.toString()) : undefined
         };
       })
     );
