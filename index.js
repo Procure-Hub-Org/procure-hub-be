@@ -33,6 +33,7 @@ initSocket(server);
 
 // za slike
 app.use('/uploads', express.static('public/uploads'));
+app.use('/logo', express.static('public/logo'));
 app.use(cors({
     origin: frontendConfig.frontendUrl
 }));

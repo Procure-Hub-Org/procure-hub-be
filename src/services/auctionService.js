@@ -3,9 +3,12 @@ const auctionRepository = require('../repositories/auctionRepository');
 const {User: User} = require("../../database/models");
 const {ProcurementRequest: ProcurementRequest} = require("../../database/models");
 
+const path = require('path');
+
 const { getIO } = require('../config/socket');
 
 const { sendMail } = require('../services/mailService.js'); // Import sendMail function from mailService.js
+const {generateOutbidEmailHtml} = require('../utils/templates/emailTemplates');
 
 
 exports.placeBid = async ({auctionId, price, userId}) => {
@@ -59,10 +62,20 @@ exports.placeBid = async ({auctionId, price, userId}) => {
 
     const procurementRequest = await ProcurementRequest.findByPk(auction.procurement_request_id);
     if (position === 1 && previousLeaderUser && previousLeaderUser.email) {
+        const previousLeaderUserBid = await procurementBidRepository.getProcurementBid({auction_id: auctionId, seller_id: previousLeaderUser.id});
+        
+        const htmlContent = generateOutbidEmailHtml({
+            user: previousLeaderUser,
+            requestTitle: procurementRequest.title,
+            auctionPrice: previousLeaderUserBid.auction_price,
+            auctionId: auctionId,
+        });
+
         await sendMail({
             to: previousLeaderUser.email,
             subject: 'You have been outbid',
-            text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". You are no longer in the first place.`,
+            text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". \nYou are no longer in the first place.`,
+            html: htmlContent, // Use the generated HTML content
         });
     }
 
