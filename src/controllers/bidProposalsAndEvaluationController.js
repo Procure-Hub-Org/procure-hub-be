@@ -10,6 +10,7 @@ const {
   Auction
 } = require('../../database/models');
 const { Op } = require('sequelize');
+const path = require('path');
 const getBidProposals = async (req, res) => {
   try {
     const { procurementRequestId } = req.params;
@@ -134,7 +135,8 @@ const procurementBids = await ProcurementBid.findAll({
           submittedAt: bid.submitted_at,
           documents: documents.map(doc => ({
             original_name: doc.original_name,
-            file_path: doc.file_path
+            file_path: doc.file_path,
+            url: `${req.protocol}://${req.get('host')}/api/bids/documents/${doc.id}`
           })),
           evaluations: criteriaEvaluations,
           finalScore: finalScore,
@@ -160,6 +162,37 @@ const procurementBids = await ProcurementBid.findAll({
   } catch (error) {
     console.error("Greška prilikom dohvaćanja ponuda:", error);
     return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+const getBidDocumentFile = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const download = req.query.download === 'true'; // Provjera da li se traži download
+
+    const document = await BidDocument.findOne({
+      where: { id: documentId }
+    });
+
+    if (!document) {
+      return res.status(404).json({ message: "Dokument nije pronađen." });
+    }
+
+    // Apsolutna putanja do fajla
+    const filePath = path.resolve(__dirname, '../../public/uploads', document.file_path);
+
+    if (download) {
+      // Ako korisnik želi preuzeti fajl
+      return res.download(filePath, document.original_name);
+    } else {
+      // Inače otvori fajl u browseru
+      res.type(path.extname(filePath).toLowerCase());
+      return res.sendFile(filePath);
+    }
+
+  } catch (error) {
+    console.error("Greška pri dohvaćanju dokumenta:", error);
+    return res.status(500).json({ message: "Greška pri dohvaćanju dokumenta", error: error.message });
   }
 };
 
@@ -346,5 +379,6 @@ module.exports = {
   getBidProposals,
   evaluateBidCriteria,
   getCriteriaByBidProposal,
-  getEvaluationCriteriaByProcurementRequestId
+  getEvaluationCriteriaByProcurementRequestId,
+  getBidDocumentFile
 };
