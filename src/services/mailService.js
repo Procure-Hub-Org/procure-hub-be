@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} text - email body text
  */
 
-const sendMail = async ({ to, subject, text, html/*, attachments*/}) => {
+const sendMail = async ({ to, subject, text, html, attachments}) => {
   try {
     const mailOptions = {
       from: emailUser,
@@ -27,13 +27,7 @@ const sendMail = async ({ to, subject, text, html/*, attachments*/}) => {
       subject,
       text,
       html, // HTML body content (optional),
-      /*attachments:[
-        {
-          filename: '',
-          path: '', // Path to the image file
-          cid: '', // this must match the one used in <img src="cid:...">
-        }
-      ],*/ // Attachments (optional)
+      attachments, // Attachments (optional)
     };
 
     await transporter.sendMail(mailOptions);

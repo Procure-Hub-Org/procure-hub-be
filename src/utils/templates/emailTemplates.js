@@ -1,4 +1,4 @@
-const generateOutbidEmailHtml = ({ user, requestTitle, auctionPrice, auctionId}) => {
+const generateOutbidEmailHtml = ({ user, requestTitle, auctionPrice, auctionId, logoCid}) => {
     return `
         <!DOCTYPE html>
         <html>
@@ -6,7 +6,7 @@ const generateOutbidEmailHtml = ({ user, requestTitle, auctionPrice, auctionId})
             <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
             <tr style="background-color: #1a1a1a;">
                 <td style="padding: 20px; text-align: center; background-color: #fff;">
-                    <img src="OVDE INSERTATI LINK SA REDISA" alt="ProcureHub" style="height: 50px;" />
+                    <img src="cid:${logoCid}" alt="ProcureHub logo" style="height: 50px;" />
                 </td>
             </tr>
             <tr>

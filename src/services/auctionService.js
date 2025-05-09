@@ -69,6 +69,7 @@ exports.placeBid = async ({auctionId, price, userId}) => {
             requestTitle: procurementRequest.title,
             auctionPrice: previousLeaderUserBid.auction_price,
             auctionId: auctionId,
+            logoCid: 'logoImage'
         });
 
         await sendMail({
@@ -76,6 +77,14 @@ exports.placeBid = async ({auctionId, price, userId}) => {
             subject: 'You have been outbid',
             text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". \nYou are no longer in the first place.`,
             html: htmlContent, // Use the generated HTML content
+            attachments: [
+                {
+                    filename: 'logo.png',
+                    path: path.join(__dirname, '../../public/logo/logo-no-background.png'), // Path to the image file
+                    cid: 'logoImage', // this must match the one used in <img src="cid:...">   
+                    contentDisposition: 'inline', // Ensure the image is displayed inline	 
+                }
+            ],
         });
     }
 
