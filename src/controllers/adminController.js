@@ -267,13 +267,44 @@ const updateAllAlerts = async (req, res) => {
   }
 };
 
+const getAnalytics = async (req, res) => {
+  try{
+  //number of procurement requests
+  const totalRequests = await db.ProcurementRequest.count();
+  //number of completed auctions
+  const completedAuctions = await db.Auction.count({
+    where: { ending_time: { [db.Sequelize.Op.lt]: new Date() } }
+  });
+  //number of bids
+  const totalBids = await db.ProcurementBid.count();
+  //frozen ratio
+  const frozenRequests = await db.ProcurementRequest.count({
+    where: { status: 'frozen' }
+  });
+  const frozenRatio = (frozenRequests / totalRequests) * 100;
+  return res.status(200).json({
+    totalRequests,
+    completedAuctions,
+    totalBids,
+    frozenRequests,
+    frozenRatio
+  });
+  }catch(error){
+    console.error("Error loading analytics:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
+const getRequestsByCategories = async (req, res) => {
 
+  
+};
 module.exports = {
   createUserByAdmin,
   updateUserByAdmin,
   getAllProcurementRequestsAsAdmin,
   getBidLogsForProcurementRequest,
   generateAlerts,
-  updateAllAlerts
+  updateAllAlerts,
+  getAnalytics,
 };

@@ -21,6 +21,7 @@ router.get('/admin/alerts/update', verifyToken, isAdmin, controller.updateAllAle
 //dobavljanje svih alertova za odredjeni bid
 router.get('/admin/alerts/:id', verifyToken, isAdmin, controller.generateAlerts);
 
+router.get('/admin/analytics/overview', verifyToken, isAdmin, controller.getAnalytics);
 
 
 module.exports = router;
