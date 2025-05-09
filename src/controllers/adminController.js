@@ -296,9 +296,36 @@ const getAnalytics = async (req, res) => {
 };
 
 const getRequestsByCategories = async (req, res) => {
+try{
+  const requestsByCategories = await db.ProcurementRequest.findAll({
+    attributes: [
+      'category_id',
+      [db.sequelize.fn('COUNT', db.sequelize.col('ProcurementRequest.id')), 'total_requests']
+    ],
+    group: ['procurementCategory.id', 'category_id'],
+    include: [
+      {
+        model: db.ProcurementCategory,
+        as: 'procurementCategory',
+        attributes: ['name']
+      }
+    ]
+  });
+  const result = requestsByCategories.map(request => ({
+    category_id: request.category_id,
+    category: request.procurementCategory.name,
+    total_requests: request.dataValues.total_requests
+  }));
+  //sort the result by total_requests in descending order  
+  result.sort((a, b) => b.total_requests - a.total_requests);
+  //return the result
+  return res.status(200).json(result);
+}catch(error){
+  console.error("Error requests by categories :", error);
+  res.status(500).json({ error: "Internal server error" });
 
-  
-};
+}};
+
 module.exports = {
   createUserByAdmin,
   updateUserByAdmin,
@@ -307,4 +334,5 @@ module.exports = {
   generateAlerts,
   updateAllAlerts,
   getAnalytics,
+  getRequestsByCategories,
 };

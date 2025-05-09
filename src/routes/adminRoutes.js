@@ -23,5 +23,6 @@ router.get('/admin/alerts/:id', verifyToken, isAdmin, controller.generateAlerts)
 
 router.get('/admin/analytics/overview', verifyToken, isAdmin, controller.getAnalytics);
 
-
+//distribution of procurement requests by category
+router.get('/admin/analytics/requests-by-categories', verifyToken, isAdmin, controller.getRequestsByCategories);
 module.exports = router;
