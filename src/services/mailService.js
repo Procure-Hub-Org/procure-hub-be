@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { emailUser, emailPass } = require('../config/email');
+const {generateOutbidEmailHtml} = require('../utils/templates/emailTemplates');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -18,13 +19,15 @@ const transporter = nodemailer.createTransport({
  * @param {string} text - email body text
  */
 
-const sendMail = async ({ to, subject, text }) => {
+const sendMail = async ({ to, subject, text, html, attachments}) => {
   try {
     const mailOptions = {
       from: emailUser,
       to,
       subject,
       text,
+      html, // HTML body content (optional),
+      attachments, // Attachments (optional)
     };
 
     await transporter.sendMail(mailOptions);
