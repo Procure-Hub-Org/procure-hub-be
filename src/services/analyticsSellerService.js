@@ -1,11 +1,25 @@
 const procurementrequest = require('../../database/models/procurementrequest');
-const { ProcurementBid, ProcurementRequest, Auction  } = require('../database/models');
+const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory  } = require('../database/models');
 
-const getSellerAnalytics = async (sellerId) => {
+exports.getSellerAnalytics = async (sellerId) => {
     // Ge the total number of bids placed by the seller 
-    const totalBids = await ProcurementBid.count({
-        where: { seller_id: sellerId }
+    const totalBids = await ProcurementBid.findAll({
+        where: { seller_id: sellerId },
+        include: [{
+            model: Auction,
+            as: 'auction',
+            include: [{
+                model: ProcurementRequest,
+                as: 'procurementRequest',
+                include: [{
+                    model: ProcurementCategory,
+                    as: 'category'
+                }]
+            }]
+    }]
     });
+
+    let totalBidsCount = totalBids.length;
 
     // Get all procurement requests that have awarded status (some bid won)
     const awardedRequests = await ProcurementRequest.findAll({
@@ -32,6 +46,8 @@ const getSellerAnalytics = async (sellerId) => {
         }
     }
 
+    let awardedBidsCount = awardedBids.length;
+
     // Calculate the ratio of awarded bids to total bids made by the seller
     const ratio = totalBids > 0 ? (awardedBids / totalBids) * 100 : 0;
 
@@ -52,11 +68,72 @@ const getSellerAnalytics = async (sellerId) => {
         sumOfRatios += ratioPerAuction;
     }
 
-    avgOfRatios = (sumOfRatios / totalAuctionCount) * 100;
+    let avgOfRatios = (sumOfRatios / totalAuctionCount) * 100;
     
-    avgPriceReduction = 100 - avgOfRatios;
+    let avgPriceReduction = 100 - avgOfRatios;
+
+    let awardedBidsByCategory = {};
+    let submittedBidsByCategory = {};
 
 
+    // Count total number of bids submitted by yhe seller for each category
+    for (const bid of totalBids) {
+        const category = bid.auction?.procurementRequest?.category;
+        if (!category) continue;
 
+        const categoryName = category.name;
+        if (!submittedBidsByCategory[categoryName]) {
+            submittedBidsByCategory[categoryName] = 0;
+        }
+        submittedBidsByCategory[categoryName]++;
+    }
 
+    // Count awarded bids per category
+    for (const bid of awardedBids) {
+        const bidWithCategory = await ProcurementBid.findByPk(bid.id, {
+            include: [{
+                model: Auction,
+                as: 'auction',
+                include: [{
+                    model: ProcurementRequest,
+                    as: 'procurementRequest',
+                    include: [{
+                        model: ProcurementCategory,
+                        as: 'category'
+                    }]
+                }]
+            }]
+        });
+
+        const category = bidWithCategory?.auction?.procurementRequest?.category;
+        if (!category) continue;
+
+        const categoryName = category.name;
+        if (!awardedBidsByCategory[categoryName]) {
+            awardedBidsByCategory[categoryName] = 0;
+        }
+        awardedBidsByCategory[categoryName]++;
+    }
+
+    const submittedBidPercentages = {};
+    const awardedBidPercentages = {};
+
+    for (const category in submittedBidsByCategory) {
+        submittedBidPercentages[category] = (submittedBidsByCategory[category] / totalSubmitted) * 100;
+    }
+
+    for (const category in awardedBidsByCategory) {
+        awardedBidPercentages[category] = (awardedBidsByCategory[category] / totalAwarded) * 100;
+    }
+
+    return {
+        totalBidsCount,
+        awardedBidsCount,
+        ratio,
+        totalAuctionCount,
+        avgOfRatios,
+        avgPriceReduction,
+        submittedBidPercentages,
+        awardedBidPercentages
+    }
 }
