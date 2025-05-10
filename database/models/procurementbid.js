@@ -28,9 +28,15 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'procurement_bid_id',
         as: 'adminLogs',
       });
+
       ProcurementBid.belongsTo(models.Auction, {
         foreignKey: 'auction_id',
         as: 'auction',
+      });
+      
+      ProcurementBid.hasMany(models.AuctionHistory, {
+        foreignKey: 'bid_id',
+        as: 'auctionHistory',
       });
       
     }
