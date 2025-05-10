@@ -6,9 +6,14 @@ const {
   BidEvaluation,
   EvaluationCriteria,
   CriteriaType,
-  ProcurementCategory
+  ProcurementCategory,
+  Auction
 } = require('../../database/models');
 const { Op } = require('sequelize');
+const path = require('path');
+
+const bidDocumentService = require("../services/bidDocumentService");
+
 const getBidProposals = async (req, res) => {
   try {
     const { procurementRequestId } = req.params;
@@ -29,15 +34,27 @@ const getBidProposals = async (req, res) => {
     }
 
     let procurementCategory = null;
-if (procurement.procurement_category_id) {
-  procurementCategory = await ProcurementCategory.findOne({
-    where: { id: procurement.procurement_category_id },
-    attributes: ['name']
-  });
-}
-    const procurementBids = await ProcurementBid.findAll({
+
+    if (procurement.procurement_category_id) {
+      procurementCategory = await ProcurementCategory.findOne({
+        where: { id: procurement.procurement_category_id },
+        attributes: ['name']
+      });
+    }
+
+    // Dohvati aukciju ako postoji
+    const auction = await Auction.findOne({
       where: { procurement_request_id: procurement.id }
     });
+
+    const now = new Date();
+    const auctionHeld = auction ? new Date(auction.ending_time) < now : false;
+
+    const procurementBids = await ProcurementBid.findAll({
+      where: { procurement_request_id: procurement.id },
+      attributes: ['id', 'seller_id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price']
+    });
+
 
     const bids = await Promise.all(
       procurementBids.map(async (bid) => {
@@ -46,9 +63,11 @@ if (procurement.procurement_category_id) {
           attributes: ['email', 'first_name', 'last_name', 'company_name']
         });
 
-        const documents = await BidDocument.findAll({
-          where: { procurement_bid_id: bid.id }
-        });
+        /*const documents = await BidDocument.findAll({
+          where: { procurement_bid_id: bid.id },
+          attributes: ['id', 'original_name', 'file_path', 'file_type']
+        });*/
+        const documents = await bidDocumentService.getBidDocumentsByProcurementBidId(bid.id);
 
         const bidEvaluations = await BidEvaluation.findAll({
           where: { procurement_bid_id: bid.id }
@@ -121,13 +140,12 @@ if (procurement.procurement_category_id) {
           timeline: bid.timeline,
           proposalText: bid.proposal_text,
           submittedAt: bid.submitted_at,
-          documents: documents.map(doc => ({
-            original_name: doc.original_name,
-            file_path: doc.file_path
-          })),
+          documents: documents,
           evaluations: criteriaEvaluations,
           finalScore: finalScore,
-          evaluationStatus: evaluationStatus
+          evaluationStatus: evaluationStatus,
+          auctionHeld: auctionHeld,
+          bidAuctionPrice: auctionHeld ? (bid.auction_price?.toString() || bid.price?.toString()) : undefined
         };
       })
     );
@@ -147,6 +165,37 @@ if (procurement.procurement_category_id) {
   } catch (error) {
     console.error("Greška prilikom dohvaćanja ponuda:", error);
     return res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+const getBidDocumentFile = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const download = req.query.download === 'true'; // Provjera da li se traži download
+
+    const document = await BidDocument.findOne({
+      where: { id: documentId }
+    });
+
+    if (!document) {
+      return res.status(404).json({ message: "Dokument nije pronađen." });
+    }
+
+    // Apsolutna putanja do fajla
+    const filePath = path.resolve(__dirname, '../../public/uploads', document.file_path);
+
+    if (download) {
+      // Ako korisnik želi preuzeti fajl
+      return res.download(filePath, document.original_name);
+    } else {
+      // Inače otvori fajl u browseru
+      res.type(path.extname(filePath).toLowerCase());
+      return res.sendFile(filePath);
+    }
+
+  } catch (error) {
+    console.error("Greška pri dohvaćanju dokumenta:", error);
+    return res.status(500).json({ message: "Greška pri dohvaćanju dokumenta", error: error.message });
   }
 };
 
@@ -333,5 +382,6 @@ module.exports = {
   getBidProposals,
   evaluateBidCriteria,
   getCriteriaByBidProposal,
-  getEvaluationCriteriaByProcurementRequestId
+  getEvaluationCriteriaByProcurementRequestId,
+  getBidDocumentFile
 };
