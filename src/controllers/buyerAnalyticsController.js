@@ -48,26 +48,30 @@ const getBuyerAnalytics = async (req, res) => {
     // Auction benefits
     const [benefitCalculation] = await sequelize.query(`
       SELECT 
-        ROUND(100 - (AVG(pb.auction_price / pb.price) * 100)::numeric, 1) AS savings
-      FROM procurement_bids pb
-      
-      JOIN auctions a ON pb.auction_id = a.id
-      JOIN procurement_requests pr ON a.procurement_request_id = pr.id
-      WHERE 
-        pb.auction_placement = 1
-        AND pr.buyer_id = :userId`, 
+        ROUND(100 - (AVG(winner_ratio) * 100)::numeric, 1) AS savings
+      FROM (
+        SELECT 
+          pb.auction_price::numeric / pb.price AS winner_ratio
+        FROM procurement_bids pb
+        
+        JOIN auctions a ON pb.auction_id = a.id
+        JOIN procurement_requests pr ON a.procurement_request_id = pr.id
+        WHERE 
+          pb.auction_placement = 1
+          AND pr.buyer_id = :userId
+      ) AS per_auction`, 
       {
-        replacements: { userId },
-        type: sequelize.QueryTypes.SELECT
+      replacements: { userId },
+      type: sequelize.QueryTypes.SELECT
     });
 
-
     const auctionBenefits = benefitCalculation?.savings || 0;
+    
 
     // Total number of requests per procurement_category
     const requestsPerCategory = await ProcurementCategory.findAll({
       attributes: [
-        'id', 
+        'id',
         [sequelize.col('name'), 'category'],
         [sequelize.fn('COUNT', sequelize.col('ProcurementRequests.id')), 'count']
       ],
@@ -79,7 +83,7 @@ const getBuyerAnalytics = async (req, res) => {
         required: false // ne ukjlucuj one koje nemaju bidova
       }],
       group: ['ProcurementCategory.id'],
-      order: [['count', 'DESC']], 
+      order: [['count', 'DESC']],
       raw: true
     });
 
@@ -148,7 +152,7 @@ const getBuyerAnalytics = async (req, res) => {
 
   catch (error) {
     console.error('Error fetching buyer analytics:', error);
-    res.status(500).json({ message: 'Failed to fetch buyers analytics'});
+    res.status(500).json({ message: 'Failed to fetch buyers analytics' });
   }
 };
 
