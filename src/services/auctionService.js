@@ -101,7 +101,7 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         throw err;
     }
 
-    const auctionHistory = await auctionHistoryRepository.addAuctionHistory(auctionId, updatedBid.id, now, originalPlacement, position);
+    const auctionHistory = await auctionHistoryRepository.addAuctionHistory(auctionId, updatedBid.id, now, originalPlacement, position, price);
     if (!auctionHistory) {
         const err = new Error('Failed to add auction history');
         err.statusCode = 500;
