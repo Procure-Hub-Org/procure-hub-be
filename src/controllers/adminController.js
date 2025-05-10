@@ -377,6 +377,63 @@ const getAvgBidsByCategory = async (req, res) => {
   }
 };
 
+//const getAvgTimeToAward = async (req, res) => {};
+
+const getTop5BuyersFrozen = async (req, res) => {
+  try {
+    //get buyers with frozen requests
+    const buyersWithFrozenCounts = await db.ProcurementRequest.findAll({
+      attributes: [
+        'buyer_id',
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'frozen_count']
+      ],
+      where: {
+        status: 'frozen'
+      },
+      group: ['buyer_id'],
+      order: [[db.sequelize.literal('frozen_count'), 'DESC']],
+      limit: 5,
+      raw: true
+    });
+
+    //if there are no buyers with frozen requests, return empty array
+    if (!buyersWithFrozenCounts.length) {
+      return res.status(200).json([]);
+    }
+
+    //get buyer with frozen requests details
+    const buyerIds = buyersWithFrozenCounts.map(b => b.buyer_id);
+    const buyers = await db.User.findAll({
+      where: {
+        id: buyerIds
+      },
+      attributes: ['id', 'first_name', 'last_name', 'company_name'],
+      raw: true
+    });
+    //map buyers with frozen requests to their details
+    const result = buyersWithFrozenCounts.map(buyerCount => {
+      const buyerInfo = buyers.find(b => b.id === buyerCount.buyer_id) || {};
+      return {
+        buyer_id: buyerCount.buyer_id,
+        first_name: buyerInfo.first_name || '',
+        last_name: buyerInfo.last_name || '',
+        company_name: buyerInfo.company_name || '',
+        frozen_requests_count: buyerCount.frozen_count
+      };
+    });
+    //sort the result by frozen_requests_count in descending order
+    result.sort((a, b) => b.frozen_requests_count - a.frozen_requests_count);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error loading top 5 buyers with frozen requests:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = { getTop5BuyersFrozen };
+
+
 module.exports = {
   createUserByAdmin,
   updateUserByAdmin,
@@ -387,4 +444,6 @@ module.exports = {
   getAnalytics,
   getRequestsByCategories,
   getAvgBidsByCategory,
+  //getAvgTimeToAward,
+  getTop5BuyersFrozen,
 };
