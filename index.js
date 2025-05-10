@@ -50,7 +50,6 @@ app.use('/api', procurementRoutes);
 app.use('/api', criteriaRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', buyerTypeRoutes);
-app.use('/api', procurementRoutes);
 app.use('/api', bidproposalRoutesBuyer);
 app.use('/api', procurementBidRoutes);
 app.use('/api', bidDocumentRoutes);

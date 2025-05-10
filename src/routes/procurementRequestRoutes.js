@@ -8,9 +8,9 @@ router.get('/procurement-requests', verifyToken, procurementRequestController.ge
 router.get('/procurement-criteria', verifyToken, procurementRequestController.getProcurementCriteria);
 router.get('/procurement-requests/buyer', verifyToken, procurementRequestController.getBuyerProcurementRequests);
 
-
 router.get('/procurement-requests/favorites', verifyToken, procurementRequestController.getFavorites);
 router.post('/procurement-requests/:id/follow', verifyToken, procurementRequestController.follow);
 router.delete('/procurement-requests/:id/unfollow', verifyToken, procurementRequestController.unfollow);
+
 
 module.exports = router;
