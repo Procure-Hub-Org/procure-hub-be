@@ -379,14 +379,13 @@ const getAvgBidsByCategory = async (req, res) => {
 
 const getAvgTimeToAward = async (req, res) => {
   try {
-    // 1. Dobavi sve awarded zahtjeve
+    //get all awarded requests
     const awardedRequests = await db.ProcurementRequest.findAll({
       where: { status: 'awarded' },
       attributes: ['id', 'title', 'created_at', 'updated_at'],
       raw: true
     });
-
-    // 2. Ako nema awarded zahtjeva
+    //if there are no awarded requests, return 0
     if (awardedRequests.length === 0) {
       return res.status(200).json({
         average_time_minutes: 0,
@@ -394,20 +393,17 @@ const getAvgTimeToAward = async (req, res) => {
         message: "Nema awarded zahtjeva"
       });
     }
-
-    // 3. Izračunaj trajanje u minutama za svaki zahtjev
+    //calculate duration in minutes
     const requestsWithMinutes = awardedRequests.map(request => {
       const minutes = Math.round(
         (new Date(request.updated_at) - new Date(request.created_at)) / (1000 * 60)
       );
       return { ...request, duration_minutes: minutes };
     });
-
-    // 4. Izračunaj prosjek
+    //calculate average time in minutes
     const totalMinutes = requestsWithMinutes.reduce((sum, req) => sum + req.duration_minutes, 0);
     const averageMinutes = (totalMinutes / requestsWithMinutes.length).toFixed(2);
 
-    // 5. Vrati rezultat
     return res.status(200).json({
       average_time_minutes: parseFloat(averageMinutes),
       total_awarded_requests: awardedRequests.length,
@@ -421,8 +417,7 @@ const getAvgTimeToAward = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Greška pri računanju prosječnog vremena:", error);
-    res.status(500).json({ error: "Došlo je do greške" });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -496,6 +491,87 @@ const getRequestsStatusDistribution = async (req, res) => {
   }
 };
 
+
+const getTop5BuyersPriceReduction = async (req, res) => {
+  try {
+    //get all winning bids where auction has ended
+    const winningBids = await db.ProcurementBid.findAll({
+      where: {
+        auction_placement: 1, 
+        '$auction.ending_time$': {
+          [db.Sequelize.Op.lt]: new Date() 
+        }
+      },
+      include: [
+        {
+          model: db.Auction,
+          as: 'auction',
+          attributes: ['ending_time'],
+          required: true
+        },
+        {
+          model: db.ProcurementRequest,
+          as: 'procurementRequest',
+          include: [
+            {
+              model: db.User,
+              as: 'buyer',
+              attributes: ['id', 'first_name', 'last_name', 'company_name']
+            }
+          ],
+          required: true
+        }
+      ],
+      attributes: [
+        'id',
+        'price',
+        'auction_price',
+        [db.sequelize.literal('price - auction_price'), 'price_reduction']
+      ],
+      raw: true
+    });
+    //if there are no winning bids, return empty array
+    if (winningBids.length === 0) {
+      return res.status(200).json([]);
+    }
+    //group winning bids by buyer
+    const buyersMap = new Map();
+
+    winningBids.forEach(bid => {
+      const buyerId = bid['procurementRequest.buyer.id'];
+      if (!buyersMap.has(buyerId)) {
+        buyersMap.set(buyerId, {
+          buyer_id: buyerId,
+          first_name: bid['procurementRequest.buyer.first_name'],
+          last_name: bid['procurementRequest.buyer.last_name'],
+          company_name: bid['procurementRequest.buyer.company_name'],
+          total_reduction: 0,
+          bid_count: 0
+        });
+      }
+      
+      const buyer = buyersMap.get(buyerId);
+      buyer.total_reduction += parseFloat(bid.price_reduction);
+      buyer.bid_count += 1;
+    });
+    //calculate average reduction per buyer
+    const buyersWithAvgReduction = Array.from(buyersMap.values()).map(buyer => ({
+      ...buyer,
+      average_reduction: parseFloat((buyer.total_reduction / buyer.bid_count).toFixed(2))
+    }));
+    //sort and get top 5
+    const top5Buyers = buyersWithAvgReduction
+      .sort((a, b) => b.average_reduction - a.average_reduction)
+      .slice(0, 5);
+
+    return res.status(200).json(top5Buyers);
+  } catch (error) {
+    console.error("Error calculating top 5 buyers by price reduction:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
 module.exports = {
   createUserByAdmin,
   updateUserByAdmin,
@@ -509,4 +585,5 @@ module.exports = {
   getAvgTimeToAward,
   getTop5BuyersFrozen,
   getRequestsStatusDistribution,
+  getTop5BuyersPriceReduction,
 };

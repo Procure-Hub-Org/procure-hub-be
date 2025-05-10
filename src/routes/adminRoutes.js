@@ -21,6 +21,7 @@ router.get('/admin/alerts/update', verifyToken, isAdmin, controller.updateAllAle
 //dobavljanje svih alertova za odredjeni bid
 router.get('/admin/alerts/:id', verifyToken, isAdmin, controller.generateAlerts);
 
+//key metrics for admin dashboard
 router.get('/admin/analytics/overview', verifyToken, isAdmin, controller.getAnalytics);
 
 //distribution of procurement requests by category
@@ -29,16 +30,16 @@ router.get('/admin/analytics/requests-by-categories', verifyToken, isAdmin, cont
 //average bids by category
 router.get('/admin/analytics/avg-bids-by-category', verifyToken, isAdmin, controller.getAvgBidsByCategory);
 
-//average time to award bids
+//average time to award requests
 router.get('/admin/analytics/avg-time-to-award', verifyToken, isAdmin, controller.getAvgTimeToAward);
 
 //buyers withe highest number of frozen requests
 router.get('/admin/analytics/top5-buyers-frozen', verifyToken, isAdmin, controller.getTop5BuyersFrozen);
 
-//buyers with highest average price reduction
-//router.get('/admin,analytics/top5-buyers-price-reduction', verifyToken, isAdmin, controller.getTop5BuyersPriceReduction);
-
 //distribution of requests by status
 router.get('/admin/analytics/requests-status-distribution', verifyToken, isAdmin, controller.getRequestsStatusDistribution);
+
+//buyers with highest average price reduction
+router.get('/admin/analytics/top5-buyers-price-reduction', verifyToken, isAdmin, controller.getTop5BuyersPriceReduction);
 
 module.exports = router;
