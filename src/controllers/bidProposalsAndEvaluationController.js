@@ -62,7 +62,8 @@ const getBidProposals = async (req, res) => {
         });
 
         const documents = await BidDocument.findAll({
-          where: { procurement_bid_id: bid.id }
+          where: { procurement_bid_id: bid.id },
+          attributes: ['id', 'original_name', 'file_path', 'file_type']
         });
 
         const bidEvaluations = await BidEvaluation.findAll({
@@ -139,7 +140,8 @@ const getBidProposals = async (req, res) => {
           documents: documents.map(doc => ({
             original_name: doc.original_name,
             file_path: doc.file_path,
-            url: `${req.protocol}://${req.get('host')}/api/bids/documents/${doc.id}`
+            url: `${req.protocol}://${req.get('host')}/api/bids/documents/${doc.id}`,
+            file_type: doc.file_type
           })),
           evaluations: criteriaEvaluations,
           finalScore: finalScore,
