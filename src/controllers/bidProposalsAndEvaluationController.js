@@ -12,6 +12,8 @@ const {
 const { Op } = require('sequelize');
 const path = require('path');
 
+const bidDocumentService = require("../services/bidDocumentService");
+
 const getBidProposals = async (req, res) => {
   try {
     const { procurementRequestId } = req.params;
@@ -61,10 +63,11 @@ const getBidProposals = async (req, res) => {
           attributes: ['email', 'first_name', 'last_name', 'company_name']
         });
 
-        const documents = await BidDocument.findAll({
+        /*const documents = await BidDocument.findAll({
           where: { procurement_bid_id: bid.id },
           attributes: ['id', 'original_name', 'file_path', 'file_type']
-        });
+        });*/
+        const documents = await bidDocumentService.getBidDocumentsByProcurementBidId(bid.id);
 
         const bidEvaluations = await BidEvaluation.findAll({
           where: { procurement_bid_id: bid.id }
@@ -137,12 +140,7 @@ const getBidProposals = async (req, res) => {
           timeline: bid.timeline,
           proposalText: bid.proposal_text,
           submittedAt: bid.submitted_at,
-          documents: documents.map(doc => ({
-            original_name: doc.original_name,
-            file_path: doc.file_path,
-            url: `${req.protocol}://${req.get('host')}/api/bids/documents/${doc.id}`,
-            file_type: doc.file_type
-          })),
+          documents: documents,
           evaluations: criteriaEvaluations,
           finalScore: finalScore,
           evaluationStatus: evaluationStatus,
