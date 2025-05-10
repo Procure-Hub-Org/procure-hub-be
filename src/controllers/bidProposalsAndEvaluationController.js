@@ -11,6 +11,7 @@ const {
 } = require('../../database/models');
 const { Op } = require('sequelize');
 const path = require('path');
+
 const getBidProposals = async (req, res) => {
   try {
     const { procurementRequestId } = req.params;
@@ -31,24 +32,26 @@ const getBidProposals = async (req, res) => {
     }
 
     let procurementCategory = null;
-if (procurement.procurement_category_id) {
-  procurementCategory = await ProcurementCategory.findOne({
-    where: { id: procurement.procurement_category_id },
-    attributes: ['name']
-  });
-}
-// Dohvati aukciju ako postoji
-const auction = await Auction.findOne({
-  where: { procurement_request_id: procurement.id }
-});
 
-const now = new Date();
-const auctionHeld = auction ? new Date(auction.ending_time) < now : false;
+    if (procurement.procurement_category_id) {
+      procurementCategory = await ProcurementCategory.findOne({
+        where: { id: procurement.procurement_category_id },
+        attributes: ['name']
+      });
+    }
 
-const procurementBids = await ProcurementBid.findAll({
-  where: { procurement_request_id: procurement.id },
-  attributes: ['id', 'seller_id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price']
-});
+    // Dohvati aukciju ako postoji
+    const auction = await Auction.findOne({
+      where: { procurement_request_id: procurement.id }
+    });
+
+    const now = new Date();
+    const auctionHeld = auction ? new Date(auction.ending_time) < now : false;
+
+    const procurementBids = await ProcurementBid.findAll({
+      where: { procurement_request_id: procurement.id },
+      attributes: ['id', 'seller_id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price']
+    });
 
 
     const bids = await Promise.all(
