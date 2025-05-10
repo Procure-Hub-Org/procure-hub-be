@@ -21,13 +21,22 @@ router.get('/admin/alerts/update', verifyToken, isAdmin, controller.updateAllAle
 //dobavljanje svih alertova za odredjeni bid
 router.get('/admin/alerts/:id', verifyToken, isAdmin, controller.generateAlerts);
 
-//key metrics for admin dashboard
-router.get('/admin/analytics/overview', verifyToken, isAdmin, controller.getAnalytics);
+//total number of procurement requests grouped by status
+router.get('/admin/analytics/request-counts', verifyToken, isAdmin, controller.getRequestCountsByStatus);
+
+//total number of auctions
+router.get('/admin/analytics/auctions-count', verifyToken, isAdmin, controller.getAuctionsCount);
+
+//total number of bids
+router.get('/admin/analytics/bids-count', verifyToken, isAdmin, controller.getBidsCount);
+
+//frozen requests ratio
+router.get('/admin/analytics/frozen-requests-ratio', verifyToken, isAdmin, controller.getFrozenRequestsRatio);
 
 //distribution of procurement requests by category
 router.get('/admin/analytics/requests-by-categories', verifyToken, isAdmin, controller.getRequestsByCategories);
 
-//average bids by category
+//average number of bids by category
 router.get('/admin/analytics/avg-bids-by-category', verifyToken, isAdmin, controller.getAvgBidsByCategory);
 
 //average time to award requests

@@ -4,6 +4,9 @@ const db = require("../../database/models");
 console.log("User", db);
 const buyerTypeController = require("./buyerTypeController");
 const { generateBidAlerts } = require('../services/alertService');
+const { Where } = require("sequelize/lib/utils");
+const { get } = require("../routes/adminRoutes");
+const { request } = require("express");
 
 
 const createUserByAdmin = async (req, res) => {
@@ -251,7 +254,6 @@ const generateAlerts = async (req, res) => {
   }
 };
 
-
 const updateAllAlerts = async (req, res) => {
   try {
     const allRequests = await db.ProcurementRequest.findAll({ attributes: ['id'] });
@@ -267,63 +269,108 @@ const updateAllAlerts = async (req, res) => {
   }
 };
 
-const getAnalytics = async (req, res) => {
+const getRequestCountsByStatus = async (req, res) => {
   try{
-  //number of procurement requests
-  const totalRequests = await db.ProcurementRequest.count();
-  //number of completed auctions
-  const completedAuctions = await db.Auction.count({
-    where: { ending_time: { [db.Sequelize.Op.lt]: new Date() } }
-  });
-  //number of bids
-  const totalBids = await db.ProcurementBid.count();
-  //frozen ratio
-  const frozenRequests = await db.ProcurementRequest.count({
-    where: { status: 'frozen' }
-  });
-  const frozenRatio = (frozenRequests / totalRequests) * 100;
-  return res.status(200).json({
-    totalRequests,
-    completedAuctions,
-    totalBids,
-    frozenRequests,
-    frozenRatio
-  });
+    const requestCounts = await db.ProcurementRequest.findAll({
+      attributes: [
+        'status',
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']
+      ],
+      where: {
+          status: ['active', 'closed', 'frozen', 'awarded']
+        },
+      group: ['status'],
+      raw: true
+    });
+    return res.status(200).json(requestCounts);
   }catch(error){
     console.error("Error loading analytics:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-const getRequestsByCategories = async (req, res) => {
+const getAuctionsCount = async (req, res) => {
+  try {
+    const totalCount = await db.Auction.count();
+    
+    return res.status(200).json({
+      total_auctions: totalCount
+    });
+
+  } catch (error) {
+    console.error("Error loading auctions counts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getBidsCount = async (req, res) => {  
+  try {
+    const totalCount = await db.ProcurementBid.count();
+    
+    return res.status(200).json({
+      total_bids: totalCount
+    });
+  } catch (error) {
+    console.error("Error loading bids counts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getFrozenRequestsRatio = async (req, res) => {
 try{
-  const requestsByCategories = await db.ProcurementRequest.findAll({
-    attributes: [
-      'category_id',
-      [db.sequelize.fn('COUNT', db.sequelize.col('ProcurementRequest.id')), 'total_requests']
-    ],
-    group: ['procurementCategory.id', 'category_id'],
-    include: [
-      {
-        model: db.ProcurementCategory,
-        as: 'procurementCategory',
-        attributes: ['name']
-      }
-    ]
+  const totalCount = await db.ProcurementRequest.count();
+  const frozenCount = await db.ProcurementRequest.count({
+    where: {
+      status: 'frozen'
+    }
   });
-  const result = requestsByCategories.map(request => ({
-    category_id: request.category_id,
-    category: request.procurementCategory.name,
-    total_requests: request.dataValues.total_requests
-  }));
-  //sort the result by total_requests in descending order  
-  result.sort((a, b) => b.total_requests - a.total_requests);
-  //return the result
-  return res.status(200).json(result);
-}catch(error){
-  console.error("Error requests by categories :", error);
+  const ratio = parseFloat((frozenCount / totalCount) * 100).toFixed(2);
+  return res.status(200).json({
+    total_count: totalCount,
+    frozen_count: frozenCount,
+    frozen_ratio: ratio
+  });
+} catch(error){ 
+  console.error("Error loading frozen ratio:", error);
   res.status(500).json({ error: "Internal server error" });
-}};
+}
+};
+
+const getRequestsByCategories = async (req, res) => {
+  try {
+    //gat all procurement categories
+    const allCategories = await db.ProcurementCategory.findAll({
+      attributes: ['id', 'name'],
+      raw: true
+    });
+    //get all requests grouped by category
+    const requestsByCategories = await db.ProcurementRequest.findAll({
+      attributes: [
+        'category_id',
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_requests']
+      ],
+      group: ['category_id'],
+      raw: true
+    });
+    //map all categories with their request counts
+    const result = allCategories.map(category => {
+      const requestCount = requestsByCategories.find(r => r.category_id === category.id);
+      return {
+        category_id: category.id,
+        category: category.name,
+        total_requests: requestCount ? parseInt(requestCount.total_requests) : 0
+      };
+    });
+    //sort the result by total_requests in descending order
+    result.sort((a, b) => b.total_requests - a.total_requests);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching requests by categories:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 const getAvgBidsByCategory = async (req, res) => {
   try {
@@ -421,6 +468,7 @@ const getAvgTimeToAward = async (req, res) => {
   }
 };
 
+
 const getTop5BuyersFrozen = async (req, res) => {
   try {
     //get buyers with frozen requests
@@ -442,7 +490,19 @@ const getTop5BuyersFrozen = async (req, res) => {
     if (!buyersWithFrozenCounts.length) {
       return res.status(200).json([]);
     }
-
+    //get total requests count for each buyer
+    const buyerid = buyersWithFrozenCounts.map(b => b.buyer_id);
+    const totalRequests = await db.ProcurementRequest.findAll({
+      attributes: [
+        'buyer_id',
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_count']
+      ],
+      where: {
+        buyer_id: buyerid
+      },
+      group: ['buyer_id'],
+      raw: true
+    });
     //get buyer with frozen requests details
     const buyerIds = buyersWithFrozenCounts.map(b => b.buyer_id);
     const buyers = await db.User.findAll({
@@ -452,6 +512,7 @@ const getTop5BuyersFrozen = async (req, res) => {
       attributes: ['id', 'first_name', 'last_name', 'company_name'],
       raw: true
     });
+
     //map buyers with frozen requests to their details
     const result = buyersWithFrozenCounts.map(buyerCount => {
       const buyerInfo = buyers.find(b => b.id === buyerCount.buyer_id) || {};
@@ -460,7 +521,8 @@ const getTop5BuyersFrozen = async (req, res) => {
         first_name: buyerInfo.first_name || '',
         last_name: buyerInfo.last_name || '',
         company_name: buyerInfo.company_name || '',
-        frozen_requests_count: buyerCount.frozen_count
+        frozen_requests_count: buyerCount.frozen_count,
+        total_requests_count: totalRequests.find(r => r.buyer_id === buyerCount.buyer_id)?.total_count || 0,
       };
     });
     //sort the result by frozen_requests_count in descending order
@@ -473,33 +535,54 @@ const getTop5BuyersFrozen = async (req, res) => {
   }
 };
 
+
 const getRequestsStatusDistribution = async (req, res) => {
   try {
-    const statusCounts = await db.ProcurementRequest.findAll({
+    const allStatuses = ['active', 'closed', 'frozen', 'awarded'];
+    //get all requests grouped by status
+    const requestCounts = await db.ProcurementRequest.findAll({
       attributes: [
         'status',
         [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']
       ],
+      where: {
+        status: allStatuses
+      },
       group: ['status'],
       raw: true
     });
-
-    return res.status(200).json(statusCounts);
+    const countsMap = {};
+    requestCounts.forEach(item => {
+      countsMap[item.status] = parseInt(item.count);
+    });
+    //map all statuses with their counts
+    const fullDistribution = allStatuses.map(status => ({
+      status,
+      count: countsMap[status] || 0
+    }));
+    //total number of requests
+    const total = fullDistribution.reduce((sum, item) => sum + item.count, 0);
+    //calculate percentage for each status
+    const result = fullDistribution.map(item => ({
+      status: item.status,
+      count: item.count,
+      percentage: total === 0 ? 0 : parseFloat(((item.count / total) * 100).toFixed(2))
+    }));
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Error loading requests status distribution:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
-
 const getTop5BuyersPriceReduction = async (req, res) => {
   try {
     //get all winning bids where auction has ended
     const winningBids = await db.ProcurementBid.findAll({
       where: {
-        auction_placement: 1, 
+        auction_placement: 1,
         '$auction.ending_time$': {
-          [db.Sequelize.Op.lt]: new Date() 
+          [db.Sequelize.Op.lt]: new Date()
         }
       },
       include: [
@@ -526,17 +609,16 @@ const getTop5BuyersPriceReduction = async (req, res) => {
         'id',
         'price',
         'auction_price',
-        [db.sequelize.literal('price - auction_price'), 'price_reduction']
+        [db.sequelize.literal('(auction_price / price)'), 'price_ratio']
       ],
       raw: true
     });
-    //if there are no winning bids, return empty array
+
     if (winningBids.length === 0) {
       return res.status(200).json([]);
     }
-    //group winning bids by buyer
+    //group winning bids by buyer and calculate ratios
     const buyersMap = new Map();
-
     winningBids.forEach(bid => {
       const buyerId = bid['procurementRequest.buyer.id'];
       if (!buyersMap.has(buyerId)) {
@@ -545,28 +627,52 @@ const getTop5BuyersPriceReduction = async (req, res) => {
           first_name: bid['procurementRequest.buyer.first_name'],
           last_name: bid['procurementRequest.buyer.last_name'],
           company_name: bid['procurementRequest.buyer.company_name'],
-          total_reduction: 0,
-          bid_count: 0
+          total_ratio: 0,
+          bid_count: 0,
+          auctions: [] //for individual auction details
         });
       }
       
       const buyer = buyersMap.get(buyerId);
-      buyer.total_reduction += parseFloat(bid.price_reduction);
+      const ratio = parseFloat(bid.price_ratio);
+      buyer.total_ratio += ratio;
       buyer.bid_count += 1;
+      buyer.auctions.push({
+        initial_price: bid.price,
+        final_price: bid.auction_price,
+        ratio: ratio
+      });
     });
-    //calculate average reduction per buyer
-    const buyersWithAvgReduction = Array.from(buyersMap.values()).map(buyer => ({
-      ...buyer,
-      average_reduction: parseFloat((buyer.total_reduction / buyer.bid_count).toFixed(2))
-    }));
-    //sort and get top 5
-    const top5Buyers = buyersWithAvgReduction
-      .sort((a, b) => b.average_reduction - a.average_reduction)
+
+    //calculate average benefit per buyer
+    const buyersWithBenefits = Array.from(buyersMap.values()).map(buyer => {
+      const averageRatio = buyer.total_ratio / buyer.bid_count;
+      const averageBenefit = 100 - (averageRatio * 100); // Convert to percentage benefit
+      
+      return {
+        buyer_id: buyer.buyer_id,
+        first_name: buyer.first_name,
+        last_name: buyer.last_name,
+        company_name: buyer.company_name,
+        average_benefit: parseFloat(averageBenefit.toFixed(2)),
+        total_auctions: buyer.bid_count,
+        auctions: buyer.auctions.map(auction => ({
+          initial_price: auction.initial_price,
+          final_price: auction.final_price,
+          ratio: parseFloat(auction.ratio.toFixed(4)),
+          benefit_percentage: parseFloat((100 - (auction.ratio * 100)).toFixed(2))
+        }))
+      };
+    });
+
+    //sort by average benefit descending and get top 5
+    const top5Buyers = buyersWithBenefits
+      .sort((a, b) => b.average_benefit - a.average_benefit)
       .slice(0, 5);
 
     return res.status(200).json(top5Buyers);
   } catch (error) {
-    console.error("Error calculating top 5 buyers by price reduction:", error);
+    console.error("Error calculating top buyers by price reduction:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -579,11 +685,14 @@ module.exports = {
   getBidLogsForProcurementRequest,
   generateAlerts,
   updateAllAlerts,
-  getAnalytics,
+  getRequestCountsByStatus,
+  getAuctionsCount,
+  getBidsCount,
+  getFrozenRequestsRatio, 
   getRequestsByCategories,
   getAvgBidsByCategory,
   getAvgTimeToAward,
   getTop5BuyersFrozen,
   getRequestsStatusDistribution,
-  getTop5BuyersPriceReduction,
+  getTop5BuyersPriceReduction
 };
