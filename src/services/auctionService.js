@@ -1,11 +1,15 @@
 const procurementBidRepository = require('../repositories/procurementBidRepository');
 const auctionRepository = require('../repositories/auctionRepository');
+const auctionHistoryRepository = require('../repositories/auctionHistoryRepository');
 const {User: User} = require("../../database/models");
 const {ProcurementRequest: ProcurementRequest} = require("../../database/models");
+
+const path = require('path');
 
 const { getIO } = require('../config/socket');
 
 const { sendMail } = require('../services/mailService.js'); // Import sendMail function from mailService.js
+const {generateOutbidEmailHtml} = require('../utils/templates/emailTemplates');
 
 
 exports.placeBid = async ({auctionId, price, userId}) => {
@@ -33,10 +37,11 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         throw err;
     }
 
+    const originalPlacement = procurementBid.auction_placement;
     const allAuctionBids = await procurementBidRepository.getAllProcurementBidsByAuctionId(auctionId);
     const position = findBidPosition(allAuctionBids, price);
 
-    const bidsToUpdate = allAuctionBids.filter(bid => (bid.auction_placement >= position && bid.auction_placement < procurementBid.auction_placement && bid.id !== procurementBid.id));
+    const bidsToUpdate = allAuctionBids.filter(bid => (bid.auction_placement >= position && bid.auction_placement < originalPlacement && bid.id !== procurementBid.id));
 
     // curent leader
     const previousLeader = allAuctionBids.find(bid => bid.auction_placement === 1 && bid.id !== procurementBid.id);
@@ -59,10 +64,29 @@ exports.placeBid = async ({auctionId, price, userId}) => {
 
     const procurementRequest = await ProcurementRequest.findByPk(auction.procurement_request_id);
     if (position === 1 && previousLeaderUser && previousLeaderUser.email) {
+        const previousLeaderUserBid = await procurementBidRepository.getProcurementBid({auction_id: auctionId, seller_id: previousLeaderUser.id});
+        
+        const htmlContent = generateOutbidEmailHtml({
+            user: previousLeaderUser,
+            requestTitle: procurementRequest.title,
+            auctionPrice: previousLeaderUserBid.auction_price,
+            auctionId: auctionId,
+            logoCid: 'logoImage'
+        });
+
         await sendMail({
             to: previousLeaderUser.email,
             subject: 'You have been outbid',
-            text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". You are no longer in the first place.`,
+            text: `Respected ${previousLeaderUser.last_name} ${previousLeaderUser.first_name}, \nSomeone has placed a lower bid than yours in an auction \"${procurementRequest.title}\". \nYou are no longer in the first place.`,
+            html: htmlContent, // Use the generated HTML content
+            attachments: [
+                {
+                    filename: 'logo.png',
+                    path: path.join(__dirname, '../../public/logo/logo-no-background.png'), // Path to the image file
+                    cid: 'logoImage', // this must match the one used in <img src="cid:...">   
+                    contentDisposition: 'inline', // Ensure the image is displayed inline	 
+                }
+            ],
         });
     }
 
@@ -76,9 +100,16 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         err.statusCode = 500;
         throw err;
     }
+
+    const auctionHistory = await auctionHistoryRepository.addAuctionHistory(auctionId, updatedBid.id, now, originalPlacement, position);
+    if (!auctionHistory) {
+        const err = new Error('Failed to add auction history');
+        err.statusCode = 500;
+        throw err;
+    }
+
     const lastCallThreshold = new Date(new Date(auction.ending_time).getTime() - auction.last_call_timer * 60_000);
     if (updatedBid.price_submitted_at > lastCallThreshold && updatedBid.auction_placement === 1) {
-        console.log('Updating auction ending time...');
         const updatedAuction = await auctionRepository.updateAuctionEndingTime(auctionId, new Date(new Date(updatedBid.price_submitted_at).getTime() + auction.last_call_timer * 60_000));
                                                                                 //before: new Date(auction.ending_time.getTime() + auction.last_call_timer * 60_000)
         if (!updatedAuction) {
