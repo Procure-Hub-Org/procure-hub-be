@@ -15,7 +15,7 @@ router.get('/admin/procurements-requests', verifyToken, isAdmin, controller.getA
 //dobavljanje svih bidova za odredjeni zahtjev za nabavku
 router.get('/admin/procurement-bids/:id', verifyToken, isAdmin, controller.getBidLogsForProcurementRequest);
 
-//upddateovanje alertova i flagged statusa za sve procurement requestove
+//updateovanje alertova i flagged statusa za sve procurement requestove
 router.get('/admin/alerts/update', verifyToken, isAdmin, controller.updateAllAlerts);
 
 //dobavljanje svih alertova za odredjeni bid
@@ -25,4 +25,7 @@ router.get('/admin/analytics/overview', verifyToken, isAdmin, controller.getAnal
 
 //distribution of procurement requests by category
 router.get('/admin/analytics/requests-by-categories', verifyToken, isAdmin, controller.getRequestsByCategories);
+
+//average bids by category
+router.get('/admin/analytics/avg-bids-by-category', verifyToken, isAdmin, controller.getAvgBidsByCategory);
 module.exports = router;

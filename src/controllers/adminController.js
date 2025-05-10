@@ -323,8 +323,59 @@ try{
 }catch(error){
   console.error("Error requests by categories :", error);
   res.status(500).json({ error: "Internal server error" });
-
 }};
+
+const getAvgBidsByCategory = async (req, res) => {
+  try {
+    //all categories
+    const allCategories = await db.ProcurementCategory.findAll({
+      attributes: ['id', 'name'],
+      raw: true
+    });
+    //all bids with categories
+    const bidsWithCategories = await db.ProcurementBid.findAll({
+      include: [{
+        model: db.ProcurementRequest,
+        as: 'procurementRequest',
+        include: [{
+          model: db.ProcurementCategory,
+          as: 'procurementCategory'
+        }]
+      }],
+      raw: true
+    });
+  //group all bids by category
+    const bidsByCategory = {};
+    //initialize all categories to 0 
+    allCategories.forEach(category => {
+      bidsByCategory[category.id] = {
+        category_id: category.id,
+        category: category.name,
+        bids_count: 0,
+        requests_count: new Set()
+      };
+    });
+    bidsWithCategories.forEach(bid => {
+      const categoryId = bid['procurementRequest.procurementCategory.id'];
+      bidsByCategory[categoryId].bids_count++;
+      bidsByCategory[categoryId].requests_count.add(bid.procurement_request_id);
+    });
+    //calculate average bids per category
+    const result = Object.values(bidsByCategory).map(category => ({
+      category_id: category.category_id,
+      category: category.category,
+      avg_bids: category.requests_count.size > 0 
+        ? parseFloat((category.bids_count / category.requests_count.size).toFixed(2))
+        : 0
+    }));
+    //sort the result by avg_bids in descending order
+    result.sort((a, b) => b.avg_bids - a.avg_bids);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error loading average bids by category:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 module.exports = {
   createUserByAdmin,
@@ -335,4 +386,5 @@ module.exports = {
   updateAllAlerts,
   getAnalytics,
   getRequestsByCategories,
+  getAvgBidsByCategory,
 };
