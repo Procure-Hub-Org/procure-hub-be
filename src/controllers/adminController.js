@@ -431,8 +431,23 @@ const getTop5BuyersFrozen = async (req, res) => {
   }
 };
 
-module.exports = { getTop5BuyersFrozen };
+const getRequestsStatusDistribution = async (req, res) => {
+  try {
+    const statusCounts = await db.ProcurementRequest.findAll({
+      attributes: [
+        'status',
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']
+      ],
+      group: ['status'],
+      raw: true
+    });
 
+    return res.status(200).json(statusCounts);
+  } catch (error) {
+    console.error("Error loading requests status distribution:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 module.exports = {
   createUserByAdmin,
@@ -446,4 +461,5 @@ module.exports = {
   getAvgBidsByCategory,
   //getAvgTimeToAward,
   getTop5BuyersFrozen,
+  getRequestsStatusDistribution,
 };

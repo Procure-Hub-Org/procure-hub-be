@@ -34,4 +34,12 @@ router.get('/admin/analytics/avg-bids-by-category', verifyToken, isAdmin, contro
 
 //buyers withe highest number of frozen requests
 router.get('/admin/analytics/top5-buyers-frozen', verifyToken, isAdmin, controller.getTop5BuyersFrozen);
+
+//buyers with highest average price reduction
+//router.get('/admin,analytics/top5-buyers-price-reduction', verifyToken, isAdmin, controller.getTop5BuyersPriceReduction);
+
+//distribution of requests by status
+router.get('/admin/analytics/requests-status-distribution', verifyToken, isAdmin, controller.getRequestsStatusDistribution);
+
+
 module.exports = router;
