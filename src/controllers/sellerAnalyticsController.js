@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 
 exports.getSellerAnalytics = async (req, res) => {
     try {
-        const sellerId = req.params.id;
+        const sellerId = req.user.id;
         const analytics = await getSellerAnalytics(sellerId);
         res.status(200).json(analytics);
     } catch (error) {
