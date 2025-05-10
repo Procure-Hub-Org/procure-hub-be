@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'auction_id',
         as: 'bids',
       });
+
+      Auction.hasMany(models.AuctionHistory, {
+        foreignKey: 'auction_id',
+        as: 'auctionHistory',
+      });
     }
   }
 
