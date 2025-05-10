@@ -1,6 +1,6 @@
 const db = require("../../database/models");
 
-exports.addAuctionHistory = async (auctionId, bidId, submittedAt, prevPosition, newPosition) => {
+exports.addAuctionHistory = async (auctionId, bidId, submittedAt, prevPosition, newPosition, price) => {
     try {
         const auctionHistory = await db.AuctionHistory.create({
             auction_id: auctionId,
@@ -8,6 +8,7 @@ exports.addAuctionHistory = async (auctionId, bidId, submittedAt, prevPosition, 
             price_submitted_at: submittedAt,
             previous_position: prevPosition,
             new_position: newPosition,
+            price: price,
         });
         return auctionHistory;
     } catch (error) {
