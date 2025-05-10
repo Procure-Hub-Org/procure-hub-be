@@ -377,7 +377,54 @@ const getAvgBidsByCategory = async (req, res) => {
   }
 };
 
-//const getAvgTimeToAward = async (req, res) => {};
+const getAvgTimeToAward = async (req, res) => {
+  try {
+    // 1. Dobavi sve awarded zahtjeve
+    const awardedRequests = await db.ProcurementRequest.findAll({
+      where: { status: 'awarded' },
+      attributes: ['id', 'title', 'created_at', 'updated_at'],
+      raw: true
+    });
+
+    // 2. Ako nema awarded zahtjeva
+    if (awardedRequests.length === 0) {
+      return res.status(200).json({
+        average_time_minutes: 0,
+        total_awarded_requests: 0,
+        message: "Nema awarded zahtjeva"
+      });
+    }
+
+    // 3. Izračunaj trajanje u minutama za svaki zahtjev
+    const requestsWithMinutes = awardedRequests.map(request => {
+      const minutes = Math.round(
+        (new Date(request.updated_at) - new Date(request.created_at)) / (1000 * 60)
+      );
+      return { ...request, duration_minutes: minutes };
+    });
+
+    // 4. Izračunaj prosjek
+    const totalMinutes = requestsWithMinutes.reduce((sum, req) => sum + req.duration_minutes, 0);
+    const averageMinutes = (totalMinutes / requestsWithMinutes.length).toFixed(2);
+
+    // 5. Vrati rezultat
+    return res.status(200).json({
+      average_time_minutes: parseFloat(averageMinutes),
+      total_awarded_requests: awardedRequests.length,
+      details: requestsWithMinutes.map(req => ({
+        request_id: req.id,
+        title: req.title,
+        duration_minutes: req.duration_minutes,
+        created_at: req.created_at,
+        awarded_at: req.updated_at
+      }))
+    });
+
+  } catch (error) {
+    console.error("Greška pri računanju prosječnog vremena:", error);
+    res.status(500).json({ error: "Došlo je do greške" });
+  }
+};
 
 const getTop5BuyersFrozen = async (req, res) => {
   try {
@@ -459,7 +506,7 @@ module.exports = {
   getAnalytics,
   getRequestsByCategories,
   getAvgBidsByCategory,
-  //getAvgTimeToAward,
+  getAvgTimeToAward,
   getTop5BuyersFrozen,
   getRequestsStatusDistribution,
 };

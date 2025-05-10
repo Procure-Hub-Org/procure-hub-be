@@ -29,8 +29,8 @@ router.get('/admin/analytics/requests-by-categories', verifyToken, isAdmin, cont
 //average bids by category
 router.get('/admin/analytics/avg-bids-by-category', verifyToken, isAdmin, controller.getAvgBidsByCategory);
 
-//average bids time to award bid
-//router.get('/admin/analytics/avg-time-to-award', verifyToken, isAdmin, controller.getAvgTimeToAward);
+//average time to award bids
+router.get('/admin/analytics/avg-time-to-award', verifyToken, isAdmin, controller.getAvgTimeToAward);
 
 //buyers withe highest number of frozen requests
 router.get('/admin/analytics/top5-buyers-frozen', verifyToken, isAdmin, controller.getTop5BuyersFrozen);
@@ -40,6 +40,5 @@ router.get('/admin/analytics/top5-buyers-frozen', verifyToken, isAdmin, controll
 
 //distribution of requests by status
 router.get('/admin/analytics/requests-status-distribution', verifyToken, isAdmin, controller.getRequestsStatusDistribution);
-
 
 module.exports = router;
