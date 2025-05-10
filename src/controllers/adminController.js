@@ -233,8 +233,6 @@ const getBidLogsForProcurementRequest = async (req, res) => {
       })
     );
 
-    console.log("BidData", BidData);
-
     res.json(BidData);
   } catch (error) {
     console.error("Error fetching logs:", error);
