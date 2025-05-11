@@ -192,20 +192,39 @@ exports.getSellerAnalytics = async (sellerId) => {
         }
     }
 
-    // Calculate the average price reduction for each bid number across all auctions
-    result.push({ auction_id: "AVERAGE PRICE REDUCTION PER BID", averages: [] });
-    console.log(result[1].averages.length);
-    for (let i = 0; i < result.length; i++) {
-        let avg_price_reduction = 0;
-        for (let j = 0; j < result[i].averages.length; j++) {
-            avg_price_reduction += result[i].averages[j].price_reduction;
+
+    result.push({ section: "Average bid reductions per bid iteration accross all auctions", averages: [] });
+    const lastIndex = result.length - 1;
+
+    // Calculate the maximum bid number across all auctions
+    const maxBidNumber = Math.max(...result.slice(0, lastIndex).map(auction => 
+        auction.averages.length > 0 ? 
+        Math.max(...auction.averages.map(bid => bid.bid_number)) : -1
+    ));
+
+    // For each bid number (0, 1, 2, etc.), calculate the average price reduction across all auctions
+    for (let bidNum = 0; bidNum <= maxBidNumber; bidNum++) {
+        let totalReduction = 0;
+        let count = 0;
+  
+        // Go through all auctions (except the last one which is the average we're calculating)
+        for (let i = 0; i < lastIndex; i++) {
+            // Find the bid with this bid number in the current auction
+            const bidData = result[i].averages.find(bid => bid.bid_number === bidNum);
+            if (bidData) {
+                totalReduction += bidData.price_reduction;
+                count++;
+            }
         }
-        avg_price_reduction /= result[i].averages.length;
-        result[result.length - 1].averages.push({ bid_number: i, price_reduction: avg_price_reduction });
+        // Add the average for this bid number to the results
+        if (count > 0) {
+            const avgReduction = totalReduction / count;
+            result[lastIndex].averages.push({ 
+                bid_number: bidNum, 
+                price_reduction: avgReduction 
+        });
+        }
     }
-
-
-    
 
     return {
         totalBidsCount,
