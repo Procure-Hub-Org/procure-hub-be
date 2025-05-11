@@ -192,6 +192,7 @@ exports.getSellerAnalytics = async (sellerId) => {
         }
     }
 
+    // Calculate the average price reduction for each bid number across all auctions
     result.push({ auction_id: "AVERAGE PRICE REDUCTION PER BID", averages: [] });
     console.log(result[1].averages.length);
     for (let i = 0; i < result.length; i++) {
