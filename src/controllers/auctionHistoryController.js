@@ -7,7 +7,7 @@ const getAuctionHistory = async (req, res) => {
   try {
     const historyLogs = await AuctionHistory.findAll({
       where: { auction_id: auctionId },
-      attributes: ['previous_position', 'new_position', 'price_submitted_at'],
+      attributes: ['previous_position', 'new_position', 'price_submitted_at', 'price'],
       include: [
         {
           model: ProcurementBid,
@@ -39,7 +39,7 @@ const getAuctionHistory = async (req, res) => {
       timestamp: log.price_submitted_at,
       sellerName: `${log.bid.seller.first_name} ${log.bid.seller.last_name}`,
       sellerCompany: log.bid.seller.company_name,
-      bidAmount: log.bid.price,
+      bidAmount: log.price,
       previousPosition: log.previous_position,
       newPosition: log.new_position,
     }));
