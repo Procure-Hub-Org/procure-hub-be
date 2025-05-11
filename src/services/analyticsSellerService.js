@@ -227,7 +227,6 @@ exports.getSellerAnalytics = async (sellerId) => {
         awardedBidsCount,
         awardedToSubmittedRatio: ratio.toFixed(2),
         avgPriceReduction: avgPriceReduction.toFixed(2),
-        avgOfRatios: avgOfRatios.toFixed(2),
         submittedBidPercentages,
         awardedBidPercentages,
         top5PositionsCount,
