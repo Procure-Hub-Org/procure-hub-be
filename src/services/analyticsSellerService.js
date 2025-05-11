@@ -25,47 +25,44 @@ exports.getSellerAnalytics = async (sellerId) => {
 
     // Get all procurement requests that have awarded status (some bid won)
     const awardedRequests = await ProcurementRequest.findAll({
-        where: { status: 'awarded' },
-        include: [{
+    where: { status: 'awarded' },
+    include: [
+        {
             model: ProcurementBid,
             as: 'procurementBids',
-            include: [{
-                model: Auction,
-                as: 'auction',
-                include: [{
-                    model: ProcurementRequest,
-                    as: 'procurementRequest',
-                    include: [{
-                        model: ProcurementCategory,
-                        as: 'procurementCategory'
-                    }]
-                }]
-            }]
-        }]
-    });
+            include: [
+                {
+                    model: Auction,
+                    as: 'auction'
+                }
+            ]
+        },
+        {
+            model: ProcurementCategory,
+            as: 'procurementCategory'
+        }
+    ]
+});
+
 
 
     let awardedBids = [];
-    let awardedBidsByCategory = {};
+    let awardedBidsByCategory = [];
 
 
     // For each awarded request, find the best bid and check if the seller made it (also extracts the awarded bids by category)
     for (const request of awardedRequests) {
         const bids = request.procurementBids;
-
         if (!bids || bids.length === 0) continue;
 
         const bestBid = bids.reduce((min, bid) => (bid.price < min.price ? bid : min), bids[0]);
 
-    
         if (bestBid.seller_id === sellerId) {
             awardedBids.push(bestBid);
 
-            const category = bestBid.auction?.procurementRequest?.procurementCategory;
-            console.log(category);
+            const category = request.procurementCategory;
             if (category) {
                 const categoryName = category.name;
-                console.log(categoryName);
                 if (!awardedBidsByCategory[categoryName]) {
                     awardedBidsByCategory[categoryName] = 0;
                 }
@@ -77,7 +74,7 @@ exports.getSellerAnalytics = async (sellerId) => {
     const awardedBidsCount = awardedBids.length;
 
     // Calculate the ratio of awarded bids to total bids made by the seller
-    const ratio = totalBids > 0 ? (awardedBidsCount / totalBidsCount) * 100 : 0;
+    const ratio = totalBidsCount > 0 ? (awardedBidsCount / totalBidsCount) * 100 : 0;
 
     // Number of auctions the seller participated in (checks if bid associated with seller has auction_id)
     const totalAuction = await ProcurementBid.findAll({
@@ -116,8 +113,8 @@ exports.getSellerAnalytics = async (sellerId) => {
     }
 
 
-    const submittedBidPercentages = [];
-    const awardedBidPercentages = [];
+    let submittedBidPercentages = {};
+    let awardedBidPercentages = {};
 
     for (const category in submittedBidsByCategory) {
         submittedBidPercentages[category] = (submittedBidsByCategory[category] / totalBidsCount) * 100;
