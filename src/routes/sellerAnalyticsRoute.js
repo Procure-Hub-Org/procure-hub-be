@@ -5,6 +5,6 @@ const { verifyToken } = require('../middleware/authMiddleware');
 const { Op } = require('sequelize');
 
 
-router.get('/seller-analytics', verifyToken, sellerAnalyticsController.getSellerAnalytics);
+router.get('/seller-analytics', verifyToken, sellerAnalyticsController.getAllSellerAnalytics);
 
 module.exports = router;
