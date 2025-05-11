@@ -23,6 +23,8 @@ const auctionHistoryRoutes = require('./src/routes/auctionHistoryRoutes.js')
 
 const { initSocket } = require('./src/config/socket.js');   // init socket.io
 const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js');
+const buyerAnalytics = require('./src/routes/buyerAnalyticsRoute.js');
+const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
 
 const app = express();
 
@@ -59,6 +61,8 @@ app.use('/api', bidProposalRoutes);
 app.use('/api', auctionDashboardRoutes);
 app.use('/api', autionCreationRoutes);
 app.use('/api', auctionRoutes);
+app.use('/api', buyerAnalytics);
+app.use('/api', sellerAnalytics);
 app.use('/api', auctionHistoryRoutes)
 
 server.listen(serverConfig.port, () => {
