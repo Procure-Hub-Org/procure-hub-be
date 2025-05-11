@@ -12,7 +12,7 @@ const getAuctionHistory = async (req, res) => {
         {
           model: ProcurementBid,
           as: 'bid',
-          attributes: ['price'],
+          attributes: ['price', 'seller_id'],
           include: [
             {
               model: User,
@@ -29,16 +29,13 @@ const getAuctionHistory = async (req, res) => {
 
     if (userRole === 'seller') {
       const currentSeller = req.user.name;
-      filteredLogs = historyLogs.filter(
-        log =>
-          `${log.bid.seller.first_name} ${log.bid.seller.last_name}` ===
-          currentSeller
-      );
+      const currentSellerId=req.user.id;
+      filteredLogs = historyLogs.filter(log => log.bid.seller_id === currentSellerId);
     } else if (userRole !== 'admin' && userRole !== 'buyer') {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
 
-    const mappedLogs = historyLogs.map(log => ({
+    const mappedLogs = filteredLogs.map(log => ({
       timestamp: log.price_submitted_at,
       sellerName: `${log.bid.seller.first_name} ${log.bid.seller.last_name}`,
       sellerCompany: log.bid.seller.company_name,
