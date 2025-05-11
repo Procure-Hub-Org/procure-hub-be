@@ -18,7 +18,8 @@ const procurementBidRoutes = require('./src/routes/procurementBidRoutes');
 const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
 const autionCreationRoutes= require('./src/routes/auctionbuyerRoutes.js');
-const auctionRoutes = require('./src/routes/auctionRoutes.js'); 
+const auctionRoutes = require('./src/routes/auctionRoutes.js');
+const auctionHistoryRoutes = require('./src/routes/auctionHistoryRoutes.js') 
 
 const { initSocket } = require('./src/config/socket.js');   // init socket.io
 const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js');
@@ -58,6 +59,7 @@ app.use('/api', bidProposalRoutes);
 app.use('/api', auctionDashboardRoutes);
 app.use('/api', autionCreationRoutes);
 app.use('/api', auctionRoutes);
+app.use('/api', auctionHistoryRoutes)
 
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -91,7 +93,8 @@ server.listen(serverConfig.port, () => {
     - POST /bid-documents/upload - Upload bid document (sellers only)
     - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
     - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request
-    - GET /api/bids/user/:userId - Fetch all seller's bids`);
+    - GET /api/bids/user/:userId - Fetch all seller's bids
+    - GET /api/auction/:id/history - Fetch auction history`);
 });
 
 

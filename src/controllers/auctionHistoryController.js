@@ -25,18 +25,18 @@ const getAuctionHistory = async (req, res) => {
       order: [['price_submitted_at', 'DESC']],
     });
 
-    //  let filteredLogs = historyLogs;
+     let filteredLogs = historyLogs;
 
-//     if (userRole === 'seller') {
-//       const currentSeller = req.user.name;
-//       filteredLogs = historyLogs.filter(
-//         log =>
-//           `${log.bid.seller.first_name} ${log.bid.seller.last_name}` ===
-//           currentSeller
-//       );
-//     } else if (userRole !== 'admin' && userRole !== 'buyer') {
-//       return res.status(403).json({ message: 'Unauthorized access' });
-//     }
+    if (userRole === 'seller') {
+      const currentSeller = req.user.name;
+      filteredLogs = historyLogs.filter(
+        log =>
+          `${log.bid.seller.first_name} ${log.bid.seller.last_name}` ===
+          currentSeller
+      );
+    } else if (userRole !== 'admin' && userRole !== 'buyer') {
+      return res.status(403).json({ message: 'Unauthorized access' });
+    }
 
     const mappedLogs = historyLogs.map(log => ({
       timestamp: log.price_submitted_at,
