@@ -325,7 +325,11 @@ const getBidsCount = async (req, res) => {
 
 const getFrozenRequestsRatio = async (req, res) => {
 try{
-  const totalCount = await db.ProcurementRequest.count();
+  const totalCount = await db.ProcurementRequest.count({
+    where: {
+          status: ['active', 'closed', 'frozen', 'awarded']
+  }
+  });
   const frozenCount = await db.ProcurementRequest.count({
     where: {
       status: 'frozen'
@@ -505,7 +509,8 @@ const getTop5BuyersFrozen = async (req, res) => {
         [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_count']
       ],
       where: {
-        buyer_id: buyerid
+        buyer_id: buyerid,
+        status: ['active', 'closed', 'frozen', 'awarded']
       },
       group: ['buyer_id'],
       raw: true
