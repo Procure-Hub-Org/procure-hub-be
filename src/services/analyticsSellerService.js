@@ -226,12 +226,15 @@ exports.getSellerAnalytics = async (sellerId) => {
         if (count > 0) {
             const avgReduction = totalReduction / count;
             result[lastIndex].averages.push({ 
-                bid_number: bidNum, 
-                price_reduction: avgReduction 
+                column_index: bidNum, 
+                average_value_in_percentage: avgReduction 
         });
         }
     }
 
+    // Return only the last row of the result
+    const averagePriceReductionOverTime = result.at(-1).averages;
+    
     return {
         totalBidsCount,
         awardedBidsCount,
@@ -240,6 +243,6 @@ exports.getSellerAnalytics = async (sellerId) => {
         submittedBidPercentages,
         awardedBidPercentages,
         top5PositionsCount,
-        priceReductionsOverTime: result
+        averagePriceReductionOverTime
     }
 }
