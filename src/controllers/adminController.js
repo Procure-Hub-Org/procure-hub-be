@@ -502,7 +502,8 @@ const getTop5BuyersFrozen = async (req, res) => {
         [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_count']
       ],
       where: {
-        buyer_id: buyerid
+        buyer_id: buyerid,
+        status: ['active', 'closed', 'frozen', 'awarded']
       },
       group: ['buyer_id'],
       raw: true
