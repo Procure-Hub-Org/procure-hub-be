@@ -148,84 +148,62 @@ exports.getSellerAnalytics = async (sellerId) => {
         top5PositionsCount[placement]++;
     }
 
- // Step 1: Fetch auction history data, sorting each auction's bids by price_submitted_at
+    // Get all auction history records for the logged in seller
     const auctionHistory = await AuctionHistory.findAll({
-        include: [
-            {
-                where: {
-                    seller_id: sellerId,
-                    auction_id: { [Op.ne]: null }
-                },
-                model: ProcurementBid,
-                as: 'bid',  // Join ProcurementBid to get the price
-                attributes: ['price', 'auction_id', 'price_submitted_at'],
-            }
-        ],
         order: [
             ['auction_id', 'ASC'],
-            ['price_submitted_at', 'ASC']
-        ]
+            ['price_submitted_at', 'ASC'],
+        ],
+        attributes: ['auction_id', 'price', 'price_submitted_at', 'previous_position', 'new_position'],
     });
 
-    // Group auction history by auction_id
-    const auctionGroups = auctionHistory.reduce((groups, record) => {
-        const { auction_id, bid, price_submitted_at, previous_position, new_position } = record;
-        if (!groups[auction_id]) {
-            groups[auction_id] = [];
+    // Group bids by auction_id
+    const auctionBids = auctionHistory.reduce((acc, bid) => {
+        if (!acc[bid.auction_id]) {
+            acc[bid.auction_id] = [];
         }
-        groups[auction_id].push({
-            bidPrice: bid.price,
-            position: new_position,
-            priceSubmittedAt: price_submitted_at
-        });
-        return groups;
+        acc[bid.auction_id].push(bid);
+        return acc;
     }, {});
 
-    let priceReductions = [];
-    let columnCount = 0;
+    // Process each auction
+    let result = [];
+    for (const auction_id in auctionBids) {
+        const bids = auctionBids[auction_id];
+        // Find the first bid (initial bid)
+        const sortedBids = [...bids].sort((a, b) => new Date(a.price_submitted_at) - new Date(b.price_submitted_at));
+        const firstBid = sortedBids[0];
 
-    // Step 2: Calculate price reduction for each auction
-    for (let auctionId in auctionGroups) {
-        const auctionBids = auctionGroups[auctionId];
+        if (firstBid) {
+            const firstBidPrice = firstBid.price;
 
-        // Sort the auction bids based on the position (from 0, 1, 2, ...)
-        auctionBids.sort((a, b) => a.position - b.position);
 
-        const referencePrice = auctionBids[0].bidPrice; // The initial bid (position 0)
-        let reductions = [];
+            let averages = [];
+            const bidsNumber = sortedBids.length;
 
-        // Calculate the reduction values for each bid
-        auctionBids.forEach((bid, index) => {
-            const reductionPercentage = (bid.bidPrice / referencePrice) * 100;
-            reductions.push(reductionPercentage);
-        });
+            for (let i = 0; i < bidsNumber; i++) {
 
-        // For each position, calculate the average reduction percentage
-        reductions.forEach((reduction, index) => {
-            if (!priceReductions[index]) {
-                priceReductions[index] = {
-                    columnIndex: index,
-                    totalReduction: 0,
-                    count: 0
-                };
+                // Compute the price reduction for each bid in regards to the first bid
+                const columnAverage = 100 - (sortedBids[i].price / firstBidPrice * 100);
+                averages.push({ bid_number: i, price_reduction: columnAverage });
             }
-            priceReductions[index].totalReduction += reduction;
-            priceReductions[index].count += 1;
-        });
 
-        columnCount = Math.max(columnCount, reductions.length);
+            result.push({ auction_id, averages });
+        }
     }
 
-    // Step 3: Calculate the average percentage for each column
-    priceReductions.forEach((column) => {
-        column.averagePercentage = column.totalReduction / column.count;
-    });
+    result.push({ auction_id: "AVERAGE PRICE REDUCTION PER BID", averages: [] });
+    console.log(result[1].averages.length);
+    for (let i = 0; i < result.length; i++) {
+        let avg_price_reduction = 0;
+        for (let j = 0; j < result[i].averages.length; j++) {
+            avg_price_reduction += result[i].averages[j].price_reduction;
+        }
+        avg_price_reduction /= result[i].averages.length;
+        result[result.length - 1].averages.push({ bid_number: i, price_reduction: avg_price_reduction });
+    }
 
-    // Return the results
-    priceReductions = priceReductions.map((column) => ({
-        columnIndex: column.columnIndex,
-        averagePercentage: column.averagePercentage
-    }));
+
     
 
     return {
@@ -236,6 +214,6 @@ exports.getSellerAnalytics = async (sellerId) => {
         submittedBidPercentages,
         awardedBidPercentages,
         top5PositionsCount,
-        priceReductionsOverTime: priceReductions
+        priceReductionsOverTime: result
     }
 }
