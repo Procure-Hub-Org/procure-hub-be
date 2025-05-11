@@ -1,5 +1,5 @@
 const procurementrequest = require('../../database/models/procurementrequest');
-const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory  } = require('../database/models');
+const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory  } = require('../../database/models');
 
 exports.getSellerAnalytics = async (sellerId) => {
     // Ge the total number of bids placed by the seller 

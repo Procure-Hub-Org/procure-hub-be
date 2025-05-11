@@ -1,4 +1,4 @@
-const { getSellerAnalytics } = require('../services/sellerAnalyticsService');
+const { getSellerAnalytics } = require('../services/analyticsSellerService.js');
 const { Op } = require('sequelize');
 
 exports.getAllSellerAnalytics = async (req, res) => {
