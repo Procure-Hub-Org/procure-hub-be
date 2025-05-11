@@ -4,6 +4,7 @@ const db = require("../../database/models");
 console.log("User", db);
 const buyerTypeController = require("./buyerTypeController");
 const { generateBidAlerts } = require('../services/alertService');
+const bidDocumentService = require("../services/bidDocumentService");
 
 
 const createUserByAdmin = async (req, res) => {
@@ -215,16 +216,22 @@ const getBidLogsForProcurementRequest = async (req, res) => {
 
     // Prepare data for frontend
     console.log(JSON.stringify(bids));
-    
-    const BidData = bids.map((bid) => ({
-      seller: bid.seller?.first_name + ' ' + bid.seller?.last_name || null,
-      price: bid.price,
-      timeline: bid.timeline,
-      proposal: bid.proposal_text,
-      submitted_at: bid.submitted_at ? bid.submitted_at.toISOString() : null,
-      adminLogs: bid.adminLogs ? bid.adminLogs : null,
-      score: bid.evaluations?.[0]?.score ?? null
-    }));
+
+    const BidData = await Promise.all(
+      bids.map(async (bid) => {
+        const documents = await bidDocumentService.getBidDocumentsByProcurementBidId(bid.id);
+        return {
+          seller: bid.seller?.first_name + ' ' + bid.seller?.last_name || null,
+          price: bid.price,
+          timeline: bid.timeline,
+          proposal: bid.proposal_text,
+          submitted_at: bid.submitted_at ? bid.submitted_at.toISOString() : null,
+          documents: documents,
+          adminLogs: bid.adminLogs ? bid.adminLogs : null,
+          score: bid.evaluations?.[0]?.score ?? null
+        };
+      })
+    );
 
     res.json(BidData);
   } catch (error) {
