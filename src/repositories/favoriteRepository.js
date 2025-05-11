@@ -62,12 +62,12 @@ exports.getFavorites = async (userId) => {
             attributes: ['first_name', 'last_name'],
           },
            {
-            model: ProcurementItem,
+            model: db.ProcurementItem,
             as: 'items',
             attributes: ['title', 'description', 'quantity']
           },
           {
-            model: Requirement,
+            model: db.Requirement,
             as: 'requirements',
             attributes: ['type', 'description']
           }
