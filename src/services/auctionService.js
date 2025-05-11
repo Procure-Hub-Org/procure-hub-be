@@ -1,5 +1,6 @@
 const procurementBidRepository = require('../repositories/procurementBidRepository');
 const auctionRepository = require('../repositories/auctionRepository');
+const auctionHistoryRepository = require('../repositories/auctionHistoryRepository');
 const {User: User} = require("../../database/models");
 const {ProcurementRequest: ProcurementRequest} = require("../../database/models");
 
@@ -36,10 +37,11 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         throw err;
     }
 
+    const originalPlacement = procurementBid.auction_placement;
     const allAuctionBids = await procurementBidRepository.getAllProcurementBidsByAuctionId(auctionId);
     const position = findBidPosition(allAuctionBids, price);
 
-    const bidsToUpdate = allAuctionBids.filter(bid => (bid.auction_placement >= position && bid.auction_placement < procurementBid.auction_placement && bid.id !== procurementBid.id));
+    const bidsToUpdate = allAuctionBids.filter(bid => (bid.auction_placement >= position && bid.auction_placement < originalPlacement && bid.id !== procurementBid.id));
 
     // curent leader
     const previousLeader = allAuctionBids.find(bid => bid.auction_placement === 1 && bid.id !== procurementBid.id);
@@ -98,9 +100,16 @@ exports.placeBid = async ({auctionId, price, userId}) => {
         err.statusCode = 500;
         throw err;
     }
+
+    const auctionHistory = await auctionHistoryRepository.addAuctionHistory(auctionId, updatedBid.id, now, originalPlacement, position, price);
+    if (!auctionHistory) {
+        const err = new Error('Failed to add auction history');
+        err.statusCode = 500;
+        throw err;
+    }
+
     const lastCallThreshold = new Date(new Date(auction.ending_time).getTime() - auction.last_call_timer * 60_000);
     if (updatedBid.price_submitted_at > lastCallThreshold && updatedBid.auction_placement === 1) {
-        console.log('Updating auction ending time...');
         const updatedAuction = await auctionRepository.updateAuctionEndingTime(auctionId, new Date(new Date(updatedBid.price_submitted_at).getTime() + auction.last_call_timer * 60_000));
                                                                                 //before: new Date(auction.ending_time.getTime() + auction.last_call_timer * 60_000)
         if (!updatedAuction) {

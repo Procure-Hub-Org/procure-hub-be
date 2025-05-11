@@ -1,4 +1,5 @@
 const { ProcurementBid, Auction } = require('../../database/models');
+const auctionHistoryRepository = require('../repositories/auctionHistoryRepository'); 
 
 const createAuction = async (req, res) => {
   try {
@@ -37,17 +38,30 @@ const createAuction = async (req, res) => {
       order: [['price', 'ASC']]
     });
 
-    // Dodjela auction_id i auction_placement po rastućim cijenama
     const sortedBids = [...bids].sort((a, b) => a.price - b.price);
+
     for (let i = 0; i < sortedBids.length; i++) {
-      await sortedBids[i].update({
+      const bid = sortedBids[i];
+
+      // Ažuriraj bid sa aukcijom i pozicijom
+      await bid.update({
         auction_id: newAuction.id,
         auction_placement: i + 1
       });
+
+      
+      await auctionHistoryRepository.addAuctionHistory(
+        newAuction.id,
+        bid.id,
+        new Date(),     
+        null,           
+        i + 1,
+        bid.price            
+      );
     }
 
     return res.status(201).json({
-      message: "Auction created and bids updated",
+      message: "Auction created, bids updated, and history recorded",
       auction: newAuction
     });
   } catch (error) {
