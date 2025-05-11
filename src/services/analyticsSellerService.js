@@ -1,5 +1,7 @@
 const procurementrequest = require('../../database/models/procurementrequest');
-const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory  } = require('../../database/models');
+const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory, AuctionHistory  } = require('../../database/models');
+const { Op } = require('sequelize');
+
 
 exports.getSellerAnalytics = async (sellerId) => {
     // Ge the total number of bids placed by the seller 
@@ -13,20 +15,20 @@ exports.getSellerAnalytics = async (sellerId) => {
                 as: 'procurementRequest',
                 include: [{
                     model: ProcurementCategory,
-                    as: 'category'
+                    as: 'procurementCategory'
                 }]
             }]
     }]
     });
 
-    let totalBidsCount = totalBids.length;
+    const totalBidsCount = totalBids.length;
 
     // Get all procurement requests that have awarded status (some bid won)
     const awardedRequests = await ProcurementRequest.findAll({
     where: { status: 'awarded' },
     include: [{
         model: ProcurementBid,
-        as: 'bids',
+        as: 'procurementBids',
         include: [{
             model: Auction,
             as: 'auction',
@@ -35,7 +37,7 @@ exports.getSellerAnalytics = async (sellerId) => {
                 as: 'procurementRequest',
                 include: [{
                     model: ProcurementCategory,
-                    as: 'category'
+                    as: 'procurementCategory'
                 }]
             }]
         }]
@@ -67,10 +69,10 @@ exports.getSellerAnalytics = async (sellerId) => {
         }
     }
 
-    let awardedBidsCount = awardedBids.length;
+    const awardedBidsCount = awardedBids.length;
 
     // Calculate the ratio of awarded bids to total bids made by the seller
-    const ratio = totalBids > 0 ? (awardedBids / totalBids) * 100 : 0;
+    const ratio = totalBids > 0 ? (awardedBidsCount / totalBidsCount) * 100 : 0;
 
     // Number of auctions the seller participated in (checks if bid associated with seller has auction_id)
     const totalAuction = await ProcurementBid.findAll({
@@ -81,7 +83,7 @@ exports.getSellerAnalytics = async (sellerId) => {
     });
 
     const totalAuctionCount = totalAuction.length;
-    const sumOfRatios = 0;
+    let sumOfRatios = 0;
 
     // Find ratio of auction price to bid price for each auction
     for (const auction of totalAuction) {
@@ -113,11 +115,11 @@ exports.getSellerAnalytics = async (sellerId) => {
     const awardedBidPercentages = {};
 
     for (const category in submittedBidsByCategory) {
-        submittedBidPercentages[category] = (submittedBidsByCategory[category] / totalSubmitted) * 100;
+        submittedBidPercentages[category] = (submittedBidsByCategory[category] / totalBidsCount) * 100;
     }
 
     for (const category in awardedBidsByCategory) {
-        awardedBidPercentages[category] = (awardedBidsByCategory[category] / totalAwarded) * 100;
+        awardedBidPercentages[category] = (awardedBidsByCategory[category] / awardedBidsCount) * 100;
     }
 
 
@@ -221,13 +223,12 @@ exports.getSellerAnalytics = async (sellerId) => {
     return {
         totalBidsCount,
         awardedBidsCount,
-        ratio,
-        totalAuctionCount,
-        avgOfRatios,
-        avgPriceReduction,
+        awardedToSubmittedRatio: ratio.toFixed(2),
+        avgPriceReduction: avgPriceReduction.toFixed(2),
+        avgOfRatios: avgOfRatios.toFixed(2),
         submittedBidPercentages,
         awardedBidPercentages,
         top5PositionsCount,
-        reductionMatrixResult,
+        priceReductionsOverTime: reductionMatrixResult
     }
 }
