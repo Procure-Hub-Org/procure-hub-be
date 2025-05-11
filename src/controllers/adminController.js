@@ -4,7 +4,6 @@ const db = require("../../database/models");
 console.log("User", db);
 const buyerTypeController = require("./buyerTypeController");
 const { generateBidAlerts } = require('../services/alertService');
-
 const bidDocumentService = require("../services/bidDocumentService");
 const { Where } = require("sequelize/lib/utils");
 const { get } = require("../routes/adminRoutes");
