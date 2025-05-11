@@ -61,7 +61,7 @@ exports.getSellerAnalytics = async (sellerId) => {
         const bids = request.procurementBids;
         if (!bids || bids.length === 0) continue;
 
-        const bestBid = bids.reduce((min, bid) => (bid.price < min.price ? bid : min), bids[0]);
+        const bestBid = bids.reduce((min, bid) => (bid.auction_price < min.auction_price ? bid : min), bids[0]);
 
         if (bestBid.seller_id === sellerId) {
             awardedBids.push(bestBid);
