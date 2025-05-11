@@ -318,7 +318,11 @@ const getBidsCount = async (req, res) => {
 
 const getFrozenRequestsRatio = async (req, res) => {
 try{
-  const totalCount = await db.ProcurementRequest.count();
+  const totalCount = await db.ProcurementRequest.count({
+    where: {
+          status: ['active', 'closed', 'frozen', 'awarded']
+  }
+  });
   const frozenCount = await db.ProcurementRequest.count({
     where: {
       status: 'frozen'
