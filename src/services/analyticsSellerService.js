@@ -161,7 +161,18 @@ exports.getSellerAnalytics = async (sellerId) => {
             ['price_submitted_at', 'ASC'],
         ],
         attributes: ['auction_id', 'price', 'price_submitted_at', 'previous_position', 'new_position'],
-    });
+        include: [
+        {
+            model: ProcurementBid,
+            as: 'bid',
+            attributes: [], // exclude bid fields from result
+            where: {
+                seller_id: sellerId, // filter by logged-in seller's ID
+            },
+            required: true // ensures only matching bids are included
+        }
+    ]
+});
 
     // Group bids by auction_id
     const auctionBids = auctionHistory.reduce((acc, bid) => {
