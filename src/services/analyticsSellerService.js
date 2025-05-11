@@ -25,42 +25,47 @@ exports.getSellerAnalytics = async (sellerId) => {
 
     // Get all procurement requests that have awarded status (some bid won)
     const awardedRequests = await ProcurementRequest.findAll({
-    where: { status: 'awarded' },
-    include: [{
-        model: ProcurementBid,
-        as: 'procurementBids',
+        where: { status: 'awarded' },
         include: [{
-            model: Auction,
-            as: 'auction',
+            model: ProcurementBid,
+            as: 'procurementBids',
             include: [{
-                model: ProcurementRequest,
-                as: 'procurementRequest',
+                model: Auction,
+                as: 'auction',
                 include: [{
-                    model: ProcurementCategory,
-                    as: 'procurementCategory'
+                    model: ProcurementRequest,
+                    as: 'procurementRequest',
+                    include: [{
+                        model: ProcurementCategory,
+                        as: 'procurementCategory'
+                    }]
                 }]
             }]
         }]
-    }]
-});
+    });
 
 
     let awardedBids = [];
     let awardedBidsByCategory = {};
 
+
     // For each awarded request, find the best bid and check if the seller made it (also extracts the awarded bids by category)
     for (const request of awardedRequests) {
-        const bids = request.bids;
+        const bids = request.procurementBids;
+
         if (!bids || bids.length === 0) continue;
 
         const bestBid = bids.reduce((min, bid) => (bid.price < min.price ? bid : min), bids[0]);
+
     
         if (bestBid.seller_id === sellerId) {
             awardedBids.push(bestBid);
 
-            const category = bestBid.auction?.procurementRequest?.category;
+            const category = bestBid.auction?.procurementRequest?.procurementCategory;
+            console.log(category);
             if (category) {
                 const categoryName = category.name;
+                console.log(categoryName);
                 if (!awardedBidsByCategory[categoryName]) {
                     awardedBidsByCategory[categoryName] = 0;
                 }
@@ -100,7 +105,7 @@ exports.getSellerAnalytics = async (sellerId) => {
 
     // Count total number of bids submitted by yhe seller for each category
     for (const bid of totalBids) {
-        const category = bid.auction?.procurementRequest?.category;
+        const category = bid.auction?.procurementRequest?.procurementCategory;
         if (!category) continue;
 
         const categoryName = category.name;
@@ -111,8 +116,8 @@ exports.getSellerAnalytics = async (sellerId) => {
     }
 
 
-    const submittedBidPercentages = {};
-    const awardedBidPercentages = {};
+    const submittedBidPercentages = [];
+    const awardedBidPercentages = [];
 
     for (const category in submittedBidsByCategory) {
         submittedBidPercentages[category] = (submittedBidsByCategory[category] / totalBidsCount) * 100;
