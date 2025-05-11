@@ -61,6 +61,16 @@ exports.getFavorites = async (userId) => {
             as: 'buyer',
             attributes: ['first_name', 'last_name'],
           },
+           {
+            model: ProcurementItem,
+            as: 'items',
+            attributes: ['title', 'description', 'quantity']
+          },
+          {
+            model: Requirement,
+            as: 'requirements',
+            attributes: ['type', 'description']
+          }
         ],
       }],
       order: [['created_at', 'DESC']],
