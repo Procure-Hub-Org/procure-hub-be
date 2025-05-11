@@ -9,7 +9,17 @@ const {
 
 const getBuyerAnalytics = async (req, res) => {
   try {
-    const userId = req.user.id;
+    
+    const role = req.user.role;
+    const idFromQuery = req.query.id;
+
+    let userId;
+    if (role === 'admin' && idFromQuery) {
+      userId= idFromQuery;
+    } else {
+      userId = req.user.id;
+    }
+    // const userId = req.user.id;
 
     // 1. Counting requests
     const [counts] = await sequelize.query(`
