@@ -190,7 +190,7 @@ exports.getSellerAnalytics = async (sellerId) => {
             for (let i = 0; i < bidsNumber; i++) {
 
                 // Compute the price reduction for each bid in regards to the first bid
-                const columnAverage = 100 - (sortedBids[i].price / firstBidPrice * 100);
+                const columnAverage = (sortedBids[i].price / firstBidPrice * 100);
                 averages.push({ bid_number: i, price_reduction: columnAverage });
             }
 
