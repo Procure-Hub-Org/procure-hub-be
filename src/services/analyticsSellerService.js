@@ -17,8 +17,14 @@ exports.getSellerAnalytics = async (sellerId) => {
                     model: ProcurementCategory,
                     as: 'procurementCategory'
                 }]
+            }],
+            model: ProcurementRequest,
+            as: 'procurementRequest',
+            include: [{
+                model: ProcurementCategory,
+                as: 'procurementCategory'
             }]
-    }]
+        }]
     });
 
     const totalBidsCount = totalBids.length;
@@ -102,7 +108,7 @@ exports.getSellerAnalytics = async (sellerId) => {
 
     // Count total number of bids submitted by yhe seller for each category
     for (const bid of totalBids) {
-        const category = bid.auction?.procurementRequest?.procurementCategory;
+        const category = bid.procurementRequest?.procurementCategory;
         if (!category) continue;
 
         const categoryName = category.name;
