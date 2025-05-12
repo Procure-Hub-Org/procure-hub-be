@@ -55,6 +55,7 @@ exports.getFavorites = async (userId) => {
 
         delete procurement.procurementCategory;
         delete procurement.buyer;
+        
 
         return {
           ...procurement,

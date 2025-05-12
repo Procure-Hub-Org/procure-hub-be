@@ -61,6 +61,28 @@ exports.getFavorites = async (userId) => {
             as: 'buyer',
             attributes: ['first_name', 'last_name'],
           },
+            {
+            model: db.EvaluationCriteria,
+            as: 'evaluationCriteria',
+            attributes: ['weight'], 
+            include: [
+              {
+                model: db.CriteriaType,
+                as: 'criteriaType',
+                attributes: ['name'],
+              }
+            ]
+          },
+           {
+            model: db.ProcurementItem,
+            as: 'items',
+            attributes: ['title', 'description', 'quantity']
+          },
+          {
+            model: db.Requirement,
+            as: 'requirements',
+            attributes: ['type', 'description']
+          }
         ],
       }],
       order: [['created_at', 'DESC']],

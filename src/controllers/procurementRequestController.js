@@ -1,6 +1,6 @@
 const procurementRequestService = require("../services/procurementRequestService");
 const { Op } = require('sequelize');
-const { ProcurementRequest, ProcurementCategory, User, BuyerType,EvaluationCriteria,CriteriaType} = require('../../database/models/'); 
+const { ProcurementRequest, ProcurementCategory, User, BuyerType,EvaluationCriteria,CriteriaType, ProcurementItem, Requirement} = require('../../database/models/'); 
 const { getBuyerTypeById } = require('./buyerTypeController')
 
 exports.follow = async (req, res) => {
@@ -82,7 +82,15 @@ exports.getBuyerProcurementRequests = async (req, res) => {
 exports.getOpenProcurementRequests = async (req, res) => {
     try {
       const filters = { status: "active" };    
-      const { category_id, deadline, buyer_id, location, budget_min,budget_max,buyer_type_name,criteria} = req.query;
+      const { 
+        category_id, 
+        deadline, 
+        buyer_id, 
+        location, 
+        budget_min,
+        budget_max,
+        buyer_type_name,
+        criteria} = req.query;
   
       //Filters
       if (category_id) {
@@ -164,6 +172,16 @@ exports.getOpenProcurementRequests = async (req, res) => {
                 attributes: ['name'],
               }
             ]
+          },
+          {
+            model: ProcurementItem,
+            as: 'items',
+            attributes: ['title', 'description', 'quantity']
+          },
+          {
+            model: Requirement,
+            as: 'requirements',
+            attributes: ['type', 'description']
           }
         ]
       });
