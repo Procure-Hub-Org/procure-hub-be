@@ -67,7 +67,7 @@ exports.getFavorites = async (userId) => {
             attributes: ['weight'], 
             include: [
               {
-                model: CriteriaType,
+                model: db.CriteriaType,
                 as: 'criteriaType',
                 attributes: ['name'],
               }
