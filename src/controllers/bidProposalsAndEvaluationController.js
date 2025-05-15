@@ -22,14 +22,16 @@ const getBidProposals = async (req, res) => {
     const procurement = await ProcurementRequest.findOne({
       where: {
         id: procurementRequestId,
-        status: 'closed',
-        buyer_id: userId
+        status: {
+  [Op.in]: ['closed', 'awarded']
+},
+ buyer_id: userId
       }
     });
 
     if (!procurement) {
       return res.status(404).json({
-        message: "Procurement request not found, not closed, or does not belong to the user."
+        message: "Procurement request not found, not closed, not awarded or does not belong to the user."
       });
     }
 
