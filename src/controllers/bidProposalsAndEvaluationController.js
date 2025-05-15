@@ -154,6 +154,7 @@ const getBidProposals = async (req, res) => {
 
     return res.status(200).json({
       procurementRequestId: procurement.id,
+      isRequestAwarded: procurement.status === 'awarded',
       title: procurement.title,
       description: procurement.description,
       category: procurementCategory?.name || 'Nepoznata kategorija',
