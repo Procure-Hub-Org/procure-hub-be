@@ -388,3 +388,5 @@ module.exports = {
   getEvaluationCriteriaByProcurementRequestId,
   getBidDocumentFile
 };
+
+
