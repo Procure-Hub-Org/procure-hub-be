@@ -6,7 +6,8 @@ const {
   User,
   ProcurementBid, 
   CriteriaType, 
-  EvaluationCriteria
+  EvaluationCriteria,
+  Contract
 } = require("../../database/models");
 
 // const { Op } = require("sequelize");
@@ -567,44 +568,74 @@ module.exports = {
     }
   },
   getProcurementRequestDetails: async (req, res) => {
-    try {
-      const procurementId = req.params.id;
-      const procurementRequest = await ProcurementRequest.findOne({
-        where: { id: procurementId },
-        include: [
-          { model: ProcurementItem, as: "items" },
-          { model: Requirement, as: "requirements" },
-          {
-            model: ProcurementCategory,
-            as: "procurementCategory",
-            attributes: ["name"],
-          },
-          {
-            model: EvaluationCriteria,
-            as: 'evaluationCriteria',
-            include: [
-              {
-                model: CriteriaType,
-                as: 'criteriaType',
-                attributes: ['name'],
-              },
-            ],
+  try {
+    const procurementId = req.params.id;
+
+    const procurementRequest = await ProcurementRequest.findOne({
+      where: { id: procurementId },
+      include: [
+        { model: ProcurementItem, as: "items" },
+        { model: Requirement, as: "requirements" },
+        {
+          model: ProcurementCategory,
+          as: "procurementCategory",
+          attributes: ["name"],
+        },
+        {
+          model: EvaluationCriteria,
+          as: 'evaluationCriteria',
+          include: [
+            {
+              model: CriteriaType,
+              as: 'criteriaType',
+              attributes: ['name'],
+            },
+          ],
+        },
+      ]
+    });
+
+    if (!procurementRequest) {
+      return res
+        .status(404)
+        .json({ message: "Procurement request not found" });
+    }
+
+    // Ako je request 'awarded', pronađi seller-a iz Contract-a
+    let seller = null;
+
+    if (procurementRequest.status === 'awarded') {
+      const contract = await Contract.findOne({
+        where: { procurement_request_id: procurementId },
+        include: {
+          model: ProcurementBid,
+          as: 'bid',
+          include: {
+            model: User,
+            as: 'seller',
+            attributes: ['first_name', 'last_name']
           }
-        ]
+        }
       });
 
-      if (!procurementRequest) {
-        return res
-          .status(404)
-          .json({ message: "Procurement request not found" });
+      if (contract && contract.bid && contract.bid.seller) {
+        seller = {
+          fullName: `${contract.bid.seller.first_name} ${contract.bid.seller.last_name}`
+        };
       }
-
-      res.status(200).json(procurementRequest);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Error fetching procurement request" });
     }
-  },
+
+    const response = {
+      ...procurementRequest.toJSON(),
+      ...(seller && { seller }), // Dodaj "seller" ako postoji
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching procurement request" });
+  }
+},
 
   getBidsForProcurement: async (req, res) => {
     const { id } = req.params;

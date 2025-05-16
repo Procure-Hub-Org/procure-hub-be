@@ -19,13 +19,12 @@ const bidDocumentRoutes = require('./src/routes/bidDocumentRoutes.js');
 const bidProposalRoutes = require('./src/routes/bidProposalRoutes.js');
 const autionCreationRoutes= require('./src/routes/auctionbuyerRoutes.js');
 const auctionRoutes = require('./src/routes/auctionRoutes.js');
-const auctionHistoryRoutes = require('./src/routes/auctionHistoryRoutes.js') 
-
+const auctionHistoryRoutes = require('./src/routes/auctionHistoryRoutes.js')
 const { initSocket } = require('./src/config/socket.js');   // init socket.io
 const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js');
 const buyerAnalytics = require('./src/routes/buyerAnalyticsRoute.js');
 const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
-
+const contractRoutes = require('./src/routes/contractRoutes.js');
 const app = express();
 
 // Inicijalizacija servera (potrebno za socket.io)
@@ -63,7 +62,7 @@ app.use('/api', auctionRoutes);
 app.use('/api', buyerAnalytics);
 app.use('/api', sellerAnalytics);
 app.use('/api', auctionHistoryRoutes)
-
+app.use('/api', contractRoutes);
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:

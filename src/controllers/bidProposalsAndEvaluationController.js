@@ -7,7 +7,8 @@ const {
   EvaluationCriteria,
   CriteriaType,
   ProcurementCategory,
-  Auction
+  Auction,
+  Contract
 } = require('../../database/models');
 const { Op } = require('sequelize');
 const path = require('path');
@@ -22,14 +23,16 @@ const getBidProposals = async (req, res) => {
     const procurement = await ProcurementRequest.findOne({
       where: {
         id: procurementRequestId,
-        status: 'closed',
-        buyer_id: userId
+        status: {
+  [Op.in]: ['closed', 'awarded']
+},
+ buyer_id: userId
       }
     });
 
     if (!procurement) {
       return res.status(404).json({
-        message: "Procurement request not found, not closed, or does not belong to the user."
+        message: "Procurement request not found, not closed, not awarded or does not belong to the user."
       });
     }
 
@@ -55,6 +58,11 @@ const getBidProposals = async (req, res) => {
       attributes: ['id', 'seller_id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price']
     });
 
+const awardedContracts = await Contract.findAll({
+      where: { procurement_request_id: procurement.id },
+      attributes: ['bid_id']
+    });
+    const awardedBidIds = awardedContracts.map(contract => contract.bid_id);
 
     const bids = await Promise.all(
       procurementBids.map(async (bid) => {
@@ -145,13 +153,15 @@ const getBidProposals = async (req, res) => {
           finalScore: finalScore,
           evaluationStatus: evaluationStatus,
           auctionHeld: auctionHeld,
-          bidAuctionPrice: auctionHeld ? (bid.auction_price?.toString() || bid.price?.toString()) : undefined
+          bidAuctionPrice: auctionHeld ? (bid.auction_price?.toString() || bid.price?.toString()) : undefined,
+           isAwarded: awardedBidIds.includes(bid.id)
         };
       })
     );
 
     return res.status(200).json({
       procurementRequestId: procurement.id,
+      isRequestAwarded: procurement.status === 'awarded',
       title: procurement.title,
       description: procurement.description,
       category: procurementCategory?.name || 'Nepoznata kategorija',
@@ -385,3 +395,5 @@ module.exports = {
   getEvaluationCriteriaByProcurementRequestId,
   getBidDocumentFile
 };
+
+
