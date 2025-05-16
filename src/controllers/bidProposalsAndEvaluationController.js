@@ -7,7 +7,8 @@ const {
   EvaluationCriteria,
   CriteriaType,
   ProcurementCategory,
-  Auction
+  Auction,
+  Contract
 } = require('../../database/models');
 const { Op } = require('sequelize');
 const path = require('path');
@@ -57,6 +58,11 @@ const getBidProposals = async (req, res) => {
       attributes: ['id', 'seller_id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price']
     });
 
+const awardedContracts = await Contract.findAll({
+      where: { procurement_request_id: procurement.id },
+      attributes: ['bid_id']
+    });
+    const awardedBidIds = awardedContracts.map(contract => contract.bid_id);
 
     const bids = await Promise.all(
       procurementBids.map(async (bid) => {
@@ -147,7 +153,8 @@ const getBidProposals = async (req, res) => {
           finalScore: finalScore,
           evaluationStatus: evaluationStatus,
           auctionHeld: auctionHeld,
-          bidAuctionPrice: auctionHeld ? (bid.auction_price?.toString() || bid.price?.toString()) : undefined
+          bidAuctionPrice: auctionHeld ? (bid.auction_price?.toString() || bid.price?.toString()) : undefined,
+           isAwarded: awardedBidIds.includes(bid.id)
         };
       })
     );
