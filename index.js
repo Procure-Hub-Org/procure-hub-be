@@ -25,6 +25,7 @@ const { initSocket } = require('./src/config/socket.js');   // init socket.io
 const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js');
 const buyerAnalytics = require('./src/routes/buyerAnalyticsRoute.js');
 const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
+const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use('/api', auctionRoutes);
 app.use('/api', buyerAnalytics);
 app.use('/api', sellerAnalytics);
 app.use('/api', auctionHistoryRoutes)
+app.use('/api', sellerReportRoute);
 
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);

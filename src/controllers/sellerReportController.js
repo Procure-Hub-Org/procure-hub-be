@@ -1,7 +1,6 @@
 const db = require('../../database/models');
-const { SuspiciousActivity, ProcurementRequest } = db;
+const { SuspiciousActivity } = db;
 
-// Get all suspicious activity reports created by a seller
 exports.getSellerReports = async (req, res) => {
   try {
     const { sellerId } = req.params;
@@ -24,7 +23,7 @@ exports.getSellerReports = async (req, res) => {
     // Get all suspicious activity reports created by this seller
     const reports = await SuspiciousActivity.findAll({
       where: {
-        reporter_id: sellerId
+        seller_id: sellerId
       },
       attributes: ['id', 'procurement_request_id'],
       order: [['created_at', 'DESC']]
