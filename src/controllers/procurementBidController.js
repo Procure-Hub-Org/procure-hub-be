@@ -95,6 +95,8 @@ const getProcurementBidById = async (req, res) => {
       auctionPrice:  b.auction_price,
       placement:     b.auction_placement,
       submittedAt:   b.submitted_at,
+      timeline:    b.timeline,
+      proposalText:  b.proposal_text,
       documents      
     };
 
