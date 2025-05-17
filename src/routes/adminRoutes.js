@@ -51,4 +51,6 @@ router.get('/admin/analytics/requests-status-distribution', verifyToken, isAdmin
 //buyers with highest average price reduction
 router.get('/admin/analytics/top5-buyers-price-reduction', verifyToken, isAdmin, controller.getTop5BuyersPriceReduction);
 
+//
+router.get('/admin/reports', verifyToken, isAdmin, controller.getReports);
 module.exports = router;
