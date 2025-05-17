@@ -1,4 +1,5 @@
 const { ProcurementBid, ProcurementRequest, User } = require('../../database/models');
+const bidDocumentService = require('../services/bidDocumentService');
 
 // get all bids by a seller with related procurement request and buyer details
 const getSellerBids = async (req, res) => {
@@ -58,38 +59,52 @@ const getRequestIdsWithMyBids = async (req, res) => {
   };
 
 
-exports.getProcurementBidById = async (req, res) => {
+const getProcurementBidById = async (req, res) => {
   try {
-    const id = req.params.id;
-    const bid = await ProcurementBid.findByPk(id, {
+    const bidId = req.params.id;
+    // 1) Fetch your existing bid + related request + seller
+    const bid = await ProcurementBid.findByPk(bidId, {
       include: [
-        { model: ProcurementRequest, as: 'procurementRequest', attributes: ['title','deadline'] },
-        { model: User,               as: 'seller',             attributes: ['first_name','last_name','company_name'] }
+        { 
+          model: ProcurementRequest,
+          as: 'procurementRequest',
+          attributes: ['title','deadline']
+        },
+        {
+          model: User,
+          as: 'seller',
+          attributes: ['first_name','last_name','company_name']
+        }
       ]
     });
 
-    if (!bid) return res.status(404).json({ success:false, message:'Not found' });
+    if (!bid) {
+      return res.status(404).json({ success: false, message: 'Bid not found' });
+    }
+
+    const documents = await bidDocumentService.getBidDocumentsByProcurementBidId(bidId);
 
     const b = bid.get({ plain: true });
-    const card = {
-      id:             b.id,
-      requestTitle:   b.procurementRequest.title,
-      deadline:       b.procurementRequest.deadline,
-      sellerName:     `${b.seller.first_name} ${b.seller.last_name}`,
-      company:        b.seller.company_name,
-      offerPrice:     b.price,
-      auctionPrice:   b.auction_price,
-      placement:      b.auction_placement,
-      submittedAt:    b.submitted_at
+    const response = {
+      id:            b.id,
+      requestTitle:  b.procurementRequest.title,
+      deadline:      b.procurementRequest.deadline,
+      sellerName:    `${b.seller.first_name} ${b.seller.last_name}`,
+      company:       b.seller.company_name,
+      offerPrice:    b.price,
+      auctionPrice:  b.auction_price,
+      placement:     b.auction_placement,
+      submittedAt:   b.submitted_at,
+      documents      
     };
 
-    res.json({ success:true, data: card });
+    return res.status(200).json({ success: true, data: response });
   }
-  catch(err) {
-    console.error(err);
-    res.status(500).json({ success:false, message:'Internal error' });
+  catch (err) {
+    console.error('Error fetching bid by ID:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
 
-module.exports = { getSellerBids, getRequestIdsWithMyBids,getProcurementBidById};
+module.exports = { getSellerBids, getRequestIdsWithMyBids, getProcurementBidById};
