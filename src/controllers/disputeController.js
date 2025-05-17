@@ -49,12 +49,11 @@ exports.createDispute = async (req, res) => {
     
     // Create the new dispute
     const newDispute = await Dispute.create({
-      contract_id,
-      complainant_id: user_id,
-      complainment_text,
-      status: 'pending',
-      created_at: new Date(),
-      updated_at: new Date()
+        contract_id,
+        user_id: user_id,  // Changed from complainant_id to user_id to match model
+        complainment_text,
+        created_at: new Date(),
+        updated_at: new Date()
     });
     
     return res.status(201).json({
