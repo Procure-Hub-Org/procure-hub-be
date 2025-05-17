@@ -57,4 +57,39 @@ const getRequestIdsWithMyBids = async (req, res) => {
       }
   };
 
-module.exports = { getSellerBids, getRequestIdsWithMyBids };
+
+exports.getProcurementBidById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const bid = await ProcurementBid.findByPk(id, {
+      include: [
+        { model: ProcurementRequest, as: 'procurementRequest', attributes: ['title','deadline'] },
+        { model: User,               as: 'seller',             attributes: ['first_name','last_name','company_name'] }
+      ]
+    });
+
+    if (!bid) return res.status(404).json({ success:false, message:'Not found' });
+
+    const b = bid.get({ plain: true });
+    const card = {
+      id:             b.id,
+      requestTitle:   b.procurementRequest.title,
+      deadline:       b.procurementRequest.deadline,
+      sellerName:     `${b.seller.first_name} ${b.seller.last_name}`,
+      company:        b.seller.company_name,
+      offerPrice:     b.price,
+      auctionPrice:   b.auction_price,
+      placement:      b.auction_placement,
+      submittedAt:    b.submitted_at
+    };
+
+    res.json({ success:true, data: card });
+  }
+  catch(err) {
+    console.error(err);
+    res.status(500).json({ success:false, message:'Internal error' });
+  }
+};
+
+
+module.exports = { getSellerBids, getRequestIdsWithMyBids,getProcurementBidById};
