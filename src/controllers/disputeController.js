@@ -5,7 +5,7 @@ const {
     ProcurementBid,
     User } = require('../../database/models');
 
-
+// vraca disputes za userov contracts sa datim id
 const getDisputesOfContract = async (req, res) => {
     const { contractId } = req.params;
     const user = req.user;
