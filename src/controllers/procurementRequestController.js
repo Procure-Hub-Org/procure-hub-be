@@ -208,6 +208,46 @@ exports.getOpenProcurementRequests = async (req, res) => {
     }
 };
 
+exports.getProcurementRequestById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const pr = await ProcurementRequest.findByPk(id, {
+      include: [
+        { model: ProcurementCategory, as: 'procurementCategory', attributes: ['name'] },
+        { model: ProcurementItem,      as: 'items',               attributes: ['title','description','quantity'] },
+        { model: Requirement,          as: 'requirements',        attributes: ['type','description'] },
+        { model: EvaluationCriteria,   as: 'evaluationCriteria',  attributes: ['weight','is_must_have'],
+          include: [{ model: CriteriaType, as: 'criteriaType', attributes: ['name'] }]
+        }
+      ]
+    });
+
+    if (!pr) return res.status(404).json({ success: false, message: 'Not found' });
+
+    const data = pr.get({ plain: true });
+    const card = {
+      id:            data.id,
+      title:         data.title,
+      description:   data.description,
+      category:      data.procurementCategory?.name,
+      items:         data.items,
+      requirements:  data.requirements,
+      criteria:      data.evaluationCriteria.map(c => ({
+                       name: c.criteriaType.name,
+                       weight: c.weight,
+                       mustHave: c.is_must_have
+                     }))
+    };
+
+    res.json({ success: true, data: card });
+  }
+  catch(err) {
+    console.error(err);
+    res.status(500).json({ success:false, message:'Internal error' });
+  }
+};
+
+
 exports.getProcurementCriteria = async (req, res) => {
   try {
     const criteria = await EvaluationCriteria.findAll({
