@@ -1,4 +1,4 @@
-const { ProcurementBid, ProcurementRequest, User } = require('../../database/models');
+const { ProcurementBid, ProcurementRequest, User, BidDocument} = require('../../database/models');
 
 // get all bids by a seller with related procurement request and buyer details
 const getSellerBids = async (req, res) => {
@@ -57,4 +57,45 @@ const getRequestIdsWithMyBids = async (req, res) => {
       }
   };
 
-module.exports = { getSellerBids, getRequestIdsWithMyBids };
+
+const getProcurementBidById = async (req, res) => {
+  try {
+    const bidId = req.params.id;
+
+    const bid = await ProcurementBid.findByPk(bidId, {
+      attributes: ['id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price'],
+      include: [
+        {
+          model: ProcurementRequest,
+          as: 'procurementRequest',
+          attributes: ['title', 'bid_edit_deadline', 'deadline'],
+          include: [
+            {
+              model: User,
+              as: 'buyer',
+              attributes: ['first_name', 'last_name', 'company_name']
+            }
+          ]
+        },
+        {
+          model: BidDocument,
+          as: 'documents', 
+          attributes: ['id', 'original_name', 'file_path', 'file_type']
+        }
+      ]
+    });
+
+    if (!bid) {
+      return res.status(404).json({ success: false, message: 'Bid not found' });
+    }
+
+    return res.status(200).json({ success: true, data: bid });
+  } catch (err) {
+    console.error('Error fetching bid by ID:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
+
+module.exports = { getSellerBids, getRequestIdsWithMyBids, getProcurementBidById};
