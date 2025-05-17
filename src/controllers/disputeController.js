@@ -1,5 +1,5 @@
 const db = require('../../database/models');
-const { Dispute, Contract } = db;
+const { Dispute, Contract, ProcurementRequest, ProcurementBid } = db;
 
 // Create a new dispute
 exports.createDispute = async (req, res) => {
@@ -30,10 +30,30 @@ exports.createDispute = async (req, res) => {
     }
     
     // Check if user is a party to this contract (either buyer or seller)
-    if (contract.buyer_id !== user_id && contract.seller_id !== user_id) {
-      return res.status(403).json({
+    // First, get the full contract details with associated procurement and bid
+    const fullContract = await Contract.findByPk(contract_id, {
+    include: [
+        {
+        model: ProcurementRequest,
+        as: 'procurementRequest',
+        attributes: ['buyer_id']
+        },
+        {
+        model: ProcurementBid,
+        as: 'bid',
+        attributes: ['seller_id']
+        }
+    ]
+    });
+
+    // Now check if the user is either the buyer or seller
+    const buyerId = fullContract.procurementRequest.buyer_id;
+    const sellerId = fullContract.bid.seller_id;
+
+    if (user_id !== buyerId && user_id !== sellerId) {
+    return res.status(403).json({
         message: 'You are not authorized to create a dispute for this contract'
-      });
+    });
     }
     
     // Check if a dispute for this contract already exists
