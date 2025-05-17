@@ -14,7 +14,7 @@ const getSellerBids = async (req, res) => {
             {
               model: ProcurementRequest,
               as: 'procurementRequest',
-              attributes: ['title', 'bid_edit_deadline', 'deadline'],
+              attributes: ['id', 'title', 'bid_edit_deadline', 'deadline'],
               include: [
                 {
                   model: User,
