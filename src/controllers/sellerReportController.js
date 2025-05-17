@@ -1,5 +1,5 @@
 const db = require('../../database/models');
-const { SuspiciousActivity } = db;
+const { SuspiciousActivity, ProcurementRequest } = db;
 
 exports.getSellerReports = async (req, res) => {
   try {
