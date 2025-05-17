@@ -26,6 +26,8 @@ const buyerAnalytics = require('./src/routes/buyerAnalyticsRoute.js');
 const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
 const contractRoutes = require('./src/routes/contractRoutes.js');
 const disputeRoutes = require('./src/routes/disputeRoutes.js');
+const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
+
 const app = express();
 
 // Inicijalizacija servera (potrebno za socket.io)
@@ -65,6 +67,7 @@ app.use('/api', sellerAnalytics);
 app.use('/api', auctionHistoryRoutes)
 app.use('/api', contractRoutes);
 app.use('/api', disputeRoutes);
+app.use('/api', sellerReportRoute);
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:
