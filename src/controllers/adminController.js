@@ -8,6 +8,7 @@ const bidDocumentService = require("../services/bidDocumentService");
 const { Where } = require("sequelize/lib/utils");
 const { get } = require("../routes/adminRoutes");
 const { request } = require("express");
+const { literal } = require("sequelize");
 
 
 const createUserByAdmin = async (req, res) => {
@@ -689,6 +690,95 @@ const getTop5BuyersPriceReduction = async (req, res) => {
   }
 };
 
+const getReports = async (req, res) => {
+  try{
+    const disputeCount = await db.Dispute.count();
+
+    const suspiciousActivities = await db.SuspiciousActivity.findAll({
+      attributes: ['id', 'text', 'created_at'],
+      include: [
+        {
+          model: db.User,
+          as: 'seller',
+          attributes: ['id', 'first_name', 'last_name', 'company_name']
+        },
+        {
+          model: db.ProcurementRequest,
+          as: 'procurementRequest',
+          attributes: ['id', 'title'],
+          include: [
+            {
+              model: db.User,
+              as: 'buyer',
+              attributes: ['id', 'first_name', 'last_name', 'company_name']
+            }
+          ]
+        }
+      ]
+    });
+
+    const top3Buyers = await db.SuspiciousActivity.findAll({
+      attributes:[
+        [db.sequelize.col('procurementRequest.buyer.id'), 'buyer_id'],
+        [db.sequelize.fn('CONCAT', db.sequelize.col('procurementRequest.buyer.first_name'), ' ', db.sequelize.col('procurementRequest.buyer.last_name')), 'buyer_name'],
+      [db.sequelize.col('procurementRequest.buyer.company_name'), 'procurementRequest.company_name'],
+      [db.sequelize.fn('COUNT', db.sequelize.col('SuspiciousActivity.id')), 'count']
+      ],
+      include: [
+        {
+          model: db.ProcurementRequest,
+          as: 'procurementRequest',
+          attributes:[],
+          include:[
+            {
+              model: db.User,
+              as: 'buyer',
+              attributes:[]
+            }
+          ]
+        }
+      ],
+      group: ['procurementRequest.buyer.id', 'procurementRequest.buyer.first_name', 'procurementRequest.buyer.last_name', 'procurementRequest.buyer.company_name'],
+      order: [[literal('count'), 'DESC']],  
+      limit: 3,
+      raw: true
+    });
+
+    const top5Users = await db.Dispute.findAll({
+      attributes: [
+        [db.sequelize.col('user.id'), 'user_id'],
+      [db.sequelize.col('user.role'), 'role'],
+      [db.sequelize.col('user.first_name'), 'first_name'],
+      [db.sequelize.col('user.last_name'), 'last_name'],
+      [db.sequelize.col('user.company_name'), 'company_name'],
+      [db.sequelize.fn('COUNT', db.sequelize.col('Dispute.id')), 'count']
+      ],
+      include:[
+        {
+          model: db.User,
+          as: 'user',
+          attributes: []
+        }
+      ],
+      group: ['user.id', 'user.role', 'user.first_name', 'user.last_name', 'user.company_name'],
+      order: [[literal('count'), 'DESC']],  
+      limit: 5,
+      raw: true
+    });
+
+    res.json({
+      disputes: {count: disputeCount},
+      suspiciousActivities,
+      top3Buyers,
+      top5Users
+    });
+  } catch (error) {
+    console.error("Error loading reports:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+
+}; 
+
 
 module.exports = {
   createUserByAdmin,
@@ -706,5 +796,6 @@ module.exports = {
   getAvgTimeToAward,
   getTop5BuyersFrozen,
   getRequestsStatusDistribution,
-  getTop5BuyersPriceReduction
+  getTop5BuyersPriceReduction,
+  getReports,
 };
