@@ -62,21 +62,29 @@ const getRequestIdsWithMyBids = async (req, res) => {
 const getProcurementBidById = async (req, res) => {
   try {
     const bidId = req.params.id;
-    // 1) Fetch your existing bid + related request + seller
-    const bid = await ProcurementBid.findByPk(bidId, {
-      include: [
-        { 
-          model: ProcurementRequest,
-          as: 'procurementRequest',
-          attributes: ['title','deadline']
-        },
-        {
-          model: User,
-          as: 'seller',
-          attributes: ['first_name','last_name','company_name']
-        }
-      ]
-    });
+    const bid = await ProcurementBid.findByPk(req.params.id, {
+    attributes: ['id', 'price', 'timeline', 'proposal_text', 'submitted_at', 'auction_price'],
+    include: [
+      {
+        model: ProcurementRequest,
+        as: 'procurementRequest',
+        attributes: ['title', 'bid_edit_deadline', 'deadline'],
+        include: [
+          {
+            model: User,
+            as: 'buyer',
+            attributes: ['first_name', 'last_name', 'company_name'],
+          },
+        ]
+      },
+      {
+        model: BidDocument,
+        as: 'bidDocuments', 
+        attributes: ['id', 'original_name', 'file_path', 'file_type'],
+      }
+    ]
+  });
+
 
     if (!bid) {
       return res.status(404).json({ success: false, message: 'Bid not found' });

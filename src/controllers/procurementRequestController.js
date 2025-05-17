@@ -230,25 +230,31 @@ exports.getProcurementRequestById = async (req, res) => {
     const data = pr.get({ plain: true });
     const card = {
       id:            data.id,
+      buyer_id:      data.buyer_id,
       title:         data.title,
       description:   data.description,
       deadline:      data.deadline,
       budget_min:    data.budget_min,
       budget_max:    data.budget_max,
+      category_id:   data.category_id,
+      status:        data.status,
       location:      data.location,
       documentation: data.documentation,
-      status:        data.status,
-      buyerType:     data.buyer.buyerType,
-      buyer_full_name: `${data.buyer?.first_name} ${data.buyer?.last_name}`,
-      buyer_type_name: data.buyer.buyerType?.name,
-      category:      data.procurementCategory?.name,
-      items:         data.items,
-      requirements:  data.requirements,
-      criteria:      data.evaluationCriteria.map(c => ({
+      flagged:       data.flagged,
+      bid_edit_deadline:     data.bid_edit,
+      created_at:    data.created_at,
+      updated_at:    data.updated_at,
+      evaluation_criteria:      data.evaluationCriteria.map(c => ({
                        name: c.criteriaType.name,
                        weight: c.weight,
                        mustHave: c.is_must_have
-                     }))
+                     })),
+      items:         data.items,
+      requirements:  data.requirements,
+      category_name:      data.procurementCategory?.name,
+      buyer_full_name: `${data.buyer?.first_name} ${data.buyer?.last_name}`,
+      buyer_type_name: data.buyer.buyerType?.name,
+    
     };
 
     res.json({ success: true, data: card });
