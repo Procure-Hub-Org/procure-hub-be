@@ -1,4 +1,5 @@
-const { Contract, ProcurementRequest, ProcurementBid } = require('../../database/models');
+const { Contract, ProcurementRequest, ProcurementBid, User } = require('../../database/models');
+const { Op } = Sequelize;
 
 const createContract = async (req, res) => {
   try {
@@ -56,6 +57,92 @@ const createContract = async (req, res) => {
   }
 };
 
+/* --- get contracts based on role ---*/
+const getContracts = async (req, res) => {
+  try {
+    const user = req.user;
+    const isAdmin = user.role === 'admin';
+
+    // filtrira rezultate prema rolama buyer/seller
+    const filter = {};
+    if (!isAdmin) {
+      filter[Op.or] = [
+        { '$procurementRequest.buyer_id$': user.id },
+        { '$bid.seller_id$': user.id },
+      ]
+    }
+
+    const contracts = await Contract.findAll({
+      where: filter,
+      include: [
+        {
+          model: ProcurementRequest,
+          as: 'procurementRequest',
+          attributes: ['id', 'title'],
+          include: [
+            {
+              model: User,
+              as: 'buyer',
+              attributes: ['name', 'company_name']
+            }
+          ]
+        },
+        {
+          model: ProcurementBid,
+          as: 'bid',
+          attributes: ['id'],
+          include: [
+            {
+              model: User,
+              as: 'seller',
+              attributes: ['name', 'company_name']
+            }
+          ]
+        },
+        // brojanje disputes za contract
+        {
+          model: Dispute,
+          as: 'disputes',
+          attributes: [],
+        }
+      ],
+      attributes: {
+        include: [
+          [Sequelize.fn( 'COUNT', Sequelize.col('disputes.id')), 'number_of_disputes']
+        ]
+      },
+      group: [
+        'Contract.id',
+        'procurementRequest.id',
+        'procurementRequest->buyer.id',
+        'bid.id',
+        'bid->seller.id'  
+      ]
+    });
+
+    // forimarnje odgovora
+    const response = contracts.map(contract => ({
+      contract_id: contract.id,
+      buyer_name: contract.procurementRequest.buyer?.name,
+      buyer_company_name: contract.procurementRequest.buyer?.company_name,
+      seller_name: contract.bid.seller?.name,
+      seller_company_name: contract.bid.seller?.company_name,
+      procurement_request_id: contract.procurement_request_id,
+      procurement_request_title: contract.procurementRequest.title,
+      procurement_bid_id: contract.bid_id,
+      number_of_disputes: contract.dataValues.number_of_disputes
+    }));
+
+    return res.json(response);
+
+  }
+  catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   createContract,
+  getContracts,
 };
