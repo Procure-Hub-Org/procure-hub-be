@@ -60,16 +60,16 @@ const getDisputesOfContract = async (req, res) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['name', 'company_name']
+                    attributes: ['id', 'first_name', 'last_name', 'company_name']
                 }
             ]
         });
 
         // forimarnje odgovora
         const response = disputes.map(d => ({
-            buyer_name: d.user.id === buyerId ? d.user.name : null,
+            buyer_name: d.user.id === buyerId ? `${d.user.first_name} ${d.user.last_name}` : null,
             buyer_company_name: d.user.id === buyerId ? d.user.company_name : null,
-            seller_name: d.user.id === sellerId ? d.user.name : null,
+            seller_name: d.user.id === sellerId ? `${d.user.first_name} ${d.user.last_name}` : null,
             seller_company_name: d.user.id === sellerId ? d.user.company_name : null,
             complainment_text: d.complainment_text
         }));
