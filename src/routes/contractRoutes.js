@@ -5,4 +5,8 @@ const { verifyToken } = require('../middleware/authMiddleware');
 
 router.post('/new-contract',verifyToken, controller.createContract);
 
+// vraca contracts zavisno od role
+router.get('/contracts', verifyToken, controller.getContracts);
+
 module.exports = router;
+

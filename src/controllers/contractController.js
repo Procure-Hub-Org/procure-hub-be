@@ -1,5 +1,5 @@
-const { Contract, ProcurementRequest, ProcurementBid, User } = require('../../database/models');
-const { Op } = Sequelize;
+const { Contract, ProcurementRequest, ProcurementBid, User, Dispute, Sequelize } = require('../../database/models');
+const { Op } =  require('sequelize');
 
 const createContract = async (req, res) => {
   try {
@@ -83,7 +83,7 @@ const getContracts = async (req, res) => {
             {
               model: User,
               as: 'buyer',
-              attributes: ['name', 'company_name']
+              attributes: ['first_name', 'last_name', 'company_name']
             }
           ]
         },
@@ -95,7 +95,7 @@ const getContracts = async (req, res) => {
             {
               model: User,
               as: 'seller',
-              attributes: ['name', 'company_name']
+              attributes: ['first_name', 'last_name', 'company_name']
             }
           ]
         },
@@ -114,18 +114,18 @@ const getContracts = async (req, res) => {
       group: [
         'Contract.id',
         'procurementRequest.id',
-        'procurementRequest->buyer.id',
+        'procurementRequest.buyer.id',
         'bid.id',
-        'bid->seller.id'  
+        'bid.seller.id'  
       ]
     });
 
     // forimarnje odgovora
     const response = contracts.map(contract => ({
       contract_id: contract.id,
-      buyer_name: contract.procurementRequest.buyer?.name,
+      buyer_name: `${contract.procurementRequest.buyer.first_name} ${contract.procurementRequest.buyer.last_name}`,
       buyer_company_name: contract.procurementRequest.buyer?.company_name,
-      seller_name: contract.bid.seller?.name,
+      seller_name: `${contract.bid.seller.first_name} ${contract.bid.seller.last_name}`,
       seller_company_name: contract.bid.seller?.company_name,
       procurement_request_id: contract.procurement_request_id,
       procurement_request_title: contract.procurementRequest.title,
