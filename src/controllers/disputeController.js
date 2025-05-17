@@ -14,6 +14,20 @@ exports.createDispute = async (req, res) => {
       });
     }
     
+    // Validate required fields
+    if (!contract_id || !complainment_text) {
+      return res.status(400).json({
+        message: 'Contract ID and complainment text are required'
+      });
+    }
+    
+    // Check if the contract exists
+    const contract = await Contract.findByPk(contract_id);
+    if (!contract) {
+      return res.status(404).json({
+        message: 'Contract not found'
+      });
+    }
     
     // Check if user is a party to this contract (either buyer or seller)
     if (contract.buyer_id !== user_id && contract.seller_id !== user_id) {
