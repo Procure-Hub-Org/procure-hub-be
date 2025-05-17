@@ -1,5 +1,5 @@
 const procurementRequestService = require("../services/procurementRequestService");
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const { ProcurementRequest, ProcurementCategory, User, BuyerType,EvaluationCriteria,CriteriaType, ProcurementItem, Requirement} = require('../../database/models/'); 
 const { getBuyerTypeById } = require('./buyerTypeController')
 
@@ -218,6 +218,9 @@ exports.getProcurementRequestById = async (req, res) => {
         { model: Requirement,          as: 'requirements',        attributes: ['type','description'] },
         { model: EvaluationCriteria,   as: 'evaluationCriteria',  attributes: ['weight','is_must_have'],
           include: [{ model: CriteriaType, as: 'criteriaType', attributes: ['name'] }]
+        },
+        { model: User,                as: 'buyer',              attributes: ['id','role','buyer_type_id','first_name','last_name'],
+          include: [{ model: BuyerType, as: 'buyerType', attributes: ['name'] }]
         }
       ]
     });
@@ -235,7 +238,7 @@ exports.getProcurementRequestById = async (req, res) => {
       location:      data.location,
       documentation: data.documentation,
       status:        data.status,
-      buyerType:     data.buyerType?.name,
+      buyerType:     data.buyer.buyerType?.name,
       buyer_full_name: `${data.buyer?.first_name} ${data.buyer?.last_name}`,
       buyer_type_name: data.buyerType?.name,
       category:      data.procurementCategory?.name,
