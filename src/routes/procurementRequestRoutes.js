@@ -4,9 +4,11 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/authMiddleware');
 const procurementRequestController = require('../controllers/procurementRequestController');
 
-router.get('/procurement-requests', verifyToken, procurementRequestController.getOpenProcurementRequests);
 router.get('/procurement-criteria', verifyToken, procurementRequestController.getProcurementCriteria);
 router.get('/procurement-requests/buyer', verifyToken, procurementRequestController.getBuyerProcurementRequests);
+
+router.get('/procurement-requests', verifyToken, procurementRequestController.getOpenProcurementRequests);
+router.get('/procurement-request-details/:id', verifyToken, procurementRequestController.getProcurementRequestById);
 
 router.get('/procurement-requests/favorites', verifyToken, procurementRequestController.getFavorites);
 router.post('/procurement-requests/:id/follow', verifyToken, procurementRequestController.follow);

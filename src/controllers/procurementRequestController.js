@@ -1,5 +1,5 @@
 const procurementRequestService = require("../services/procurementRequestService");
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const { ProcurementRequest, ProcurementCategory, User, BuyerType,EvaluationCriteria,CriteriaType, ProcurementItem, Requirement} = require('../../database/models/'); 
 const { getBuyerTypeById } = require('./buyerTypeController')
 
@@ -207,6 +207,60 @@ exports.getOpenProcurementRequests = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.getProcurementRequestById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const pr = await ProcurementRequest.findByPk(id, {
+      include: [
+        { model: ProcurementCategory, as: 'procurementCategory', attributes: ['name'] },
+        { model: ProcurementItem,      as: 'items',               attributes: ['title','description','quantity'] },
+        { model: Requirement,          as: 'requirements',        attributes: ['type','description'] },
+        { model: EvaluationCriteria,   as: 'evaluationCriteria',  attributes: ['weight','is_must_have'],
+          include: [{ model: CriteriaType, as: 'criteriaType', attributes: ['name'] }]
+        },
+        { model: User,                as: 'buyer',              attributes: ['id','role','buyer_type_id','first_name','last_name'],
+          include: [{ model: BuyerType, as: 'buyerType', attributes: ['name'] }]
+        }
+      ]
+    });
+
+    if (!pr) return res.status(404).json({ success: false, message: 'Not found' });
+
+    const data = pr.get({ plain: true });
+    const card = {
+      id:            data.id,
+      buyer_id:      data.buyer_id,
+      title:         data.title,
+      description:   data.description,
+      deadline:      data.deadline,
+      budget_min:    data.budget_min,
+      budget_max:    data.budget_max,
+      category_id:   data.category_id,
+      status:        data.status,
+      location:      data.location,
+      documentation: data.documentation,
+      flagged:       data.flagged,
+      bid_edit_deadline:     data.bid_edit,
+      created_at:    data.created_at,
+      updated_at:    data.updated_at,
+      evaluationCriteria: data.evaluationCriteria,
+      items:         data.items,
+      requirements:  data.requirements,
+      category_name:      data.procurementCategory?.name,
+      buyer_full_name: `${data.buyer?.first_name} ${data.buyer?.last_name}`,
+      buyer_type_name: data.buyer.buyerType?.name,
+    
+    };
+
+    res.json({ success: true, data: card });
+  }
+  catch(err) {
+    console.error(err);
+    res.status(500).json({ success:false, message:'Internal error' });
+  }
+};
+
 
 exports.getProcurementCriteria = async (req, res) => {
   try {
