@@ -39,7 +39,7 @@ const getDisputesOfContract = async (req, res) => {
         };
 
         if (user.role !== 'admin') {
-
+          /*
             // buyer vidi dispute koje je seller napravio
             if (user.id === buyerId) {
                 filterDispute.user_id = sellerId;
@@ -47,6 +47,11 @@ const getDisputesOfContract = async (req, res) => {
             // seller vidi dispute koje je buyer napravio
             else if (user.id === sellerId) {
                 filterDispute.user_id = buyerId;
+            }
+          */
+            // buyer i seller vide disputes u koje su ukljuceni
+            if (user.id === buyerId || user.id === sellerId) {
+                filterDispute.user_id = [buyerId, sellerId];
             }
             else {
                 return res.status(403).json({ message: 'Access denied' });
