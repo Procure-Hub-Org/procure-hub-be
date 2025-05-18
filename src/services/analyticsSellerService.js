@@ -1,9 +1,9 @@
-const procurementrequest = require('../../database/models/procurementrequest');
-const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory, AuctionHistory  } = require('../../database/models');
+const { ProcurementBid, ProcurementRequest, Auction, ProcurementCategory, AuctionHistory, Contract  } = require('../../database/models');
 const { Op } = require('sequelize');
 
 
 exports.getSellerAnalytics = async (sellerId) => {
+
     // Ge the total number of bids placed by the seller 
     const totalBids = await ProcurementBid.findAll({
         where: { seller_id: sellerId },
@@ -29,54 +29,29 @@ exports.getSellerAnalytics = async (sellerId) => {
 
     const totalBidsCount = totalBids.length;
 
-    // Get all procurement requests that have awarded status (some bid won)
-    const awardedRequests = await ProcurementRequest.findAll({
-    where: { status: 'awarded' },
-    include: [
-        {
-            model: ProcurementBid,
-            as: 'procurementBids',
-            include: [
-                {
-                    model: Auction,
-                    as: 'auction'
-                }
-            ]
-        },
-        {
-            model: ProcurementCategory,
-            as: 'procurementCategory'
-        }
-    ]
-});
-
-
-
-    let awardedBids = [];
-    let awardedBidsByCategory = [];
-
-
-    // For each awarded request, find the best bid and check if the seller made it (also extracts the awarded bids by category)
-    for (const request of awardedRequests) {
-        const bids = request.procurementBids;
-        if (!bids || bids.length === 0) continue;
-
-        const bestBid = bids.reduce((min, bid) => (bid.auction_price < min.auction_price ? bid : min), bids[0]);
-
-        if (bestBid.seller_id == sellerId) {
-            awardedBids.push(bestBid);
-
-            const category = request.procurementCategory;
-            if (category) {
-                const categoryName = category.name;
-                if (!awardedBidsByCategory[categoryName]) {
-                    awardedBidsByCategory[categoryName] = 0;
-                }
-                awardedBidsByCategory[categoryName]++;
+    // Get the list of awarded bids for the seller 
+    const awardedBids = await Contract.findAll({
+        include: [
+            {
+                model: ProcurementBid,
+                as: 'bid',
+                where: { seller_id: sellerId },
+            },
+            {
+                model: ProcurementRequest,
+                as: 'procurementRequest',
+                include: [
+                    {
+                        model: ProcurementCategory,
+                        as: 'procurementCategory'
+                    }
+                ]
             }
-        }
-    }
+        ]
+    });
 
+
+    // Count total number of awarded bids
     const awardedBidsCount = awardedBids.length;
 
     // Calculate the ratio of awarded bids to total bids made by the seller
@@ -103,7 +78,8 @@ exports.getSellerAnalytics = async (sellerId) => {
     
     let avgPriceReduction = 100 - avgOfRatios;
 
-    let submittedBidsByCategory = {};
+    let submittedBidsByCategory = [];
+    let awardedBidsByCategory = [];
 
 
     // Count total number of bids submitted by yhe seller for each category
@@ -116,6 +92,18 @@ exports.getSellerAnalytics = async (sellerId) => {
             submittedBidsByCategory[categoryName] = 0;
         }
         submittedBidsByCategory[categoryName]++;
+    }
+
+    // Count total number of awarded bids for each category
+    for (const bid of awardedBids) {
+        const category = bid.procurementRequest?.procurementCategory;
+        if (!category) continue;
+
+        const categoryName = category.name;
+        if (!awardedBidsByCategory[categoryName]) {
+            awardedBidsByCategory[categoryName] = 0;
+        }
+        awardedBidsByCategory[categoryName]++;
     }
 
 
@@ -171,8 +159,8 @@ exports.getSellerAnalytics = async (sellerId) => {
             },
             required: true // ensures only matching bids are included
         }
-    ]
-});
+        ]
+    });
 
     // Group bids by auction_id
     const auctionBids = auctionHistory.reduce((acc, bid) => {
