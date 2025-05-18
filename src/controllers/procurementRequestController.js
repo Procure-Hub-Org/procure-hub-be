@@ -244,11 +244,7 @@ exports.getProcurementRequestById = async (req, res) => {
       bid_edit_deadline:     data.bid_edit,
       created_at:    data.created_at,
       updated_at:    data.updated_at,
-      evaluation_criteria:      data.evaluationCriteria.map(c => ({
-                       name: c.criteriaType.name,
-                       weight: c.weight,
-                       mustHave: c.is_must_have
-                     })),
+      evaluationCriteria: data.evaluationCriteria,
       items:         data.items,
       requirements:  data.requirements,
       category_name:      data.procurementCategory?.name,
