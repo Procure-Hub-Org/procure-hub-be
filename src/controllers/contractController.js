@@ -83,7 +83,7 @@ const getContracts = async (req, res) => {
             {
               model: User,
               as: 'buyer',
-              attributes: ['first_name', 'last_name', 'company_name']
+              attributes: ['id', 'first_name', 'last_name', 'company_name']
             }
           ]
         },
@@ -95,7 +95,7 @@ const getContracts = async (req, res) => {
             {
               model: User,
               as: 'seller',
-              attributes: ['first_name', 'last_name', 'company_name']
+              attributes: ['id', 'first_name', 'last_name', 'company_name']
             }
           ]
         },
@@ -123,8 +123,10 @@ const getContracts = async (req, res) => {
     // forimarnje odgovora
     const response = contracts.map(contract => ({
       contract_id: contract.id,
+      buyer_id: contract.procurementRequest.buyer.id,
       buyer_name: `${contract.procurementRequest.buyer.first_name} ${contract.procurementRequest.buyer.last_name}`,
       buyer_company_name: contract.procurementRequest.buyer?.company_name,
+      seller_id: contract.bid.seller.id,
       seller_name: `${contract.bid.seller.first_name} ${contract.bid.seller.last_name}`,
       seller_company_name: contract.bid.seller?.company_name,
       procurement_request_id: contract.procurement_request_id,
