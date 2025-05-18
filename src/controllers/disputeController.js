@@ -67,6 +67,7 @@ const getDisputesOfContract = async (req, res) => {
 
         // forimarnje odgovora
         const response = disputes.map(d => ({
+            id: d.id,
             buyer_name: d.user.id === buyerId ? `${d.user.first_name} ${d.user.last_name}` : null,
             buyer_company_name: d.user.id === buyerId ? d.user.company_name : null,
             seller_name: d.user.id === sellerId ? `${d.user.first_name} ${d.user.last_name}` : null,
@@ -87,78 +88,89 @@ const getDisputesOfContract = async (req, res) => {
 // Create a new dispute
 const createDispute = async (req, res) => {
   try {
+    console.log('Received dispute creation request:', req.body);
+
     const { contract_id, complainment_text } = req.body;
     const user_id = req.user.id;
-    
+
+    console.log(`User ID: ${user_id}, Contract ID: ${contract_id}`);
+    console.log("User status from req.user:", `"${req.user.status}"`);
     // Verify user is active
     if (req.user.status !== 'active') {
+      console.log('User account is not active');
       return res.status(403).json({ 
         message: 'Your account is not active. Please contact support.' 
       });
     }
-    
+
     // Validate required fields
     if (!contract_id || !complainment_text) {
+      console.log('Missing contract_id or complainment_text:', { contract_id, complainment_text });
       return res.status(400).json({
         message: 'Contract ID and complainment text are required'
       });
     }
-    
+
     // Check if the contract exists
     const contract = await Contract.findByPk(contract_id);
     if (!contract) {
+      console.log(`Contract with ID ${contract_id} not found`);
       return res.status(404).json({
         message: 'Contract not found'
       });
     }
-    
-    // Check if user is a party to this contract (either buyer or seller)
-    // First, get the full contract details with associated procurement and bid
+    console.log(`Contract found:`, contract);
+
+    // Get full contract details with procurement and bid
     const fullContract = await Contract.findByPk(contract_id, {
-    include: [
+      include: [
         {
-        model: ProcurementRequest,
-        as: 'procurementRequest',
-        attributes: ['buyer_id']
+          model: ProcurementRequest,
+          as: 'procurementRequest',
+          attributes: ['buyer_id']
         },
         {
-        model: ProcurementBid,
-        as: 'bid',
-        attributes: ['seller_id']
+          model: ProcurementBid,
+          as: 'bid',
+          attributes: ['seller_id']
         }
-    ]
+      ]
     });
 
-    // Now check if the user is either the buyer or seller
-    const buyerId = fullContract.procurementRequest.buyer_id;
-    const sellerId = fullContract.bid.seller_id;
+    console.log('Full contract details:', fullContract);
 
+    const buyerId = fullContract.procurementRequest?.buyer_id;
+    const sellerId = fullContract.bid?.seller_id;
+
+    console.log(`Buyer ID: ${buyerId}, Seller ID: ${sellerId}`);
+
+    // Check authorization
     if (user_id !== buyerId && user_id !== sellerId) {
-    return res.status(403).json({
+      console.log('User is not authorized to create dispute for this contract');
+      return res.status(403).json({
         message: 'You are not authorized to create a dispute for this contract'
-    });
+      });
     }
-    
-    // Check if a dispute for this contract already exists
-    const existingDispute = await Dispute.findOne({
-      where: { contract_id }
-    });
-    
+    {/*}
+    // Check if dispute already exists
+    const existingDispute = await Dispute.findOne({ where: { contract_id } });
     if (existingDispute) {
+      console.log('Dispute already exists for this contract');
       return res.status(400).json({
         message: 'A dispute for this contract already exists'
       });
     }
-    
-    // Create the new dispute
+    */}
+
+    // Create the dispute
     const newDispute = await Dispute.create({
-        contract_id,
-        user_id: user_id,  // Changed from complainant_id to user_id to match model
-        complainment_text,
-        created_at: new Date(),
-        updated_at: new Date()
+      contract_id,
+      user_id,
+      complainment_text
     });
-    
+
+    console.log('Dispute created successfully:', newDispute);
+
     return res.status(201).json({
       message: 'Dispute created successfully',
       dispute: {
@@ -167,7 +179,7 @@ const createDispute = async (req, res) => {
         status: newDispute.status
       }
     });
-    
+
   } catch (error) {
     console.error('Error creating dispute:', error);
     return res.status(500).json({ 
