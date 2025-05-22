@@ -7,7 +7,7 @@ ProcureHub is a modern web-based platform that streamlines the procurement proce
 ---
 
 ## Preview  
-https://procurehub.up.railway.app/
+https://procure-hub.up.railway.app/
 
 ---
 
