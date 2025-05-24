@@ -1,21 +1,23 @@
 const {
+  Auction,
   ProcurementBid,
   ProcurementRequest,
   ProcurementCategory,
   EvaluationCriteria,
   CriteriaType,
   sequelize } = require('../../database/models');
-
+const MVLinearRegression = require('ml-regression-multivariate-linear');
+const { Op } = require('sequelize');
 
 const getBuyerAnalytics = async (req, res) => {
   try {
-    
+
     const role = req.user.role;
     const idFromQuery = req.query.id;
 
     let userId;
     if (role === 'admin' && idFromQuery) {
-      userId= idFromQuery;
+      userId = idFromQuery;
     } else {
       userId = req.user.id;
     }
@@ -69,14 +71,14 @@ const getBuyerAnalytics = async (req, res) => {
         WHERE 
           pb.auction_placement = 1
           AND pr.buyer_id = :userId
-      ) AS per_auction`, 
+      ) AS per_auction`,
       {
-      replacements: { userId },
-      type: sequelize.QueryTypes.SELECT
-    });
+        replacements: { userId },
+        type: sequelize.QueryTypes.SELECT
+      });
 
     const auctionBenefits = benefitCalculation?.savings || 0;
-    
+
 
     // Total number of requests per procurement_category
     const requestsPerCategory = await ProcurementCategory.findAll({
@@ -166,4 +168,175 @@ const getBuyerAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { getBuyerAnalytics };
+
+const getRegressionData = async (req, res) => {
+
+  userId = req.user.id;
+
+  try {
+
+    // Dobavi sve tendere sa zavrsenim aukcijama vezane za buyer
+    const procurementRequests = await ProcurementRequest.findAll({
+      where: {
+        status: { [Op.in]: ['awarded', 'closed'] },
+        buyer_id: userId,
+      },
+      include: [
+        {
+          model: EvaluationCriteria,
+          as: 'evaluationCriteria',
+          required: false
+        }
+      ]
+    });
+
+    // Buyer nema zavrsenih tendera
+    if (procurementRequests.length === 0) {
+      return res.status(404).json({ message: 'No completed procurement requests' });
+    }
+
+
+    const procurementRequestsIds = procurementRequests.map(req => req.id);
+    // Ponude vezane za tender
+    const bids = await ProcurementBid.findAll({
+      where: {
+        procurement_request_id: {
+          [Op.in]: procurementRequestsIds
+        }
+      },
+    });
+
+     // Ako nema nikakvih pounuda na tenderima
+    if (bids.length === 0) {
+      return res.status(200).json({ message: 'Not enough data to perform analysis.' });
+    }
+
+    // Aukcije vezane za tender
+    const auctions = await Auction.findAll({
+      where: {
+        procurement_request_id: {
+          [Op.in]: procurementRequestsIds
+        }
+      }
+    });
+
+    // Grupiranje aukcija i pounuda vezane za tender
+    const auctionsByRequestId = {};
+    auctions.forEach(auction => {
+      auctionsByRequestId[auction.procurement_request_id] = auction;
+    });
+
+    const bidsByRequestId = {};
+    bids.forEach(bid => {
+      if (!bidsByRequestId[bid.procurement_request_id]) {
+        bidsByRequestId[bid.procurement_request_id] = [];
+      }
+      bidsByRequestId[bid.procurement_request_id].push(bid);
+    });
+
+    const data = procurementRequests.map(request => ({
+      auction: auctionsByRequestId[request.id] || null,
+      procurementBids: bidsByRequestId[request.id] || [],
+      evaluationCriteria: request.evaluationCriteria || [],
+      created_at: request.created_at
+    })).filter(d => d.procurementBids.length > 0);
+
+    const variables = [
+      'auction_duration',
+      'last_call_duration',
+      'num_bidders',
+      'time_until_first_bid',
+      'num_total_bids',
+      'evaluation_weight_entropy',
+      'has_must_have_criteria',
+      'strictness_of_criteria',
+      'price_decrease_in_auction'
+    ];
+    const X = []; // nezavisne varijable
+    const y = []; // zavisne varijable
+
+    // Priprema podataka za regresiju
+    for (const d of data) {
+      const auction = d.auction;
+      const bids = d.procurementBids;
+      const evaluationCriteria = d.evaluationCriteria;
+
+      // Varijable
+      const auctionDuration = auction ? auction.duration : 0;
+      const lastCallDuration = auction ? auction.last_call_timer : 0;
+      const numTotalBids = bids.length;
+
+      // Izdvajamo id sellera za bidove i uklanjamo duplikate 
+      const numBidders = new Set(bids.map(bid => bid.seller_id)).size;
+
+      // Vrijeme potrebno za prvi bid (u minutama)
+      const firstBid = bids.reduce((first, bid) =>
+        bid.submitted_at < first.submitted_at ? bid : first, bids[0]);
+      timeUntilFirstBid = (firstBid.submitted_at - d.created_at) / (1000 * 60);
+
+
+      // Entropija za criteria evaluation
+      const totalWeight = evaluationCriteria.reduce((sum, criteria) => sum + criteria.weight, 0);
+      const weights = evaluationCriteria.map(criteria => criteria.weight / totalWeight); // normalizacija
+      const evaluationWeightEntropy = weights.reduce((sum, w) => {
+        return sum - (w > 0 ? w * Math.log(w) : 0);
+      }, 0);
+
+      const hasMustHaveCriteria = evaluationCriteria.some(criteria => criteria.is_must_have);
+      const strictnessOfCriteria = evaluationCriteria.filter(criteria => criteria.is_must_have).length;
+
+      // Smanjenje cijene ponude
+      let lowestFinalPrice = 0;
+      let priceDecreaseInAuction = 0;
+
+      const auctionIsFinished = auction && auction.ending_time && new Date(auction.ending_time) <= new Date();
+      // Racuna price decrease in auction samo ako ima aukciju
+      if (auctionIsFinished) {
+        const winningBid = bids.find(bid => bid.auction_placement === 1);
+        lowestFinalPrice = winningBid.auction_price;
+        priceDecreaseInAuction = winningBid.price - winningBid.auction_price;
+      }
+      else {
+        const lowestBid = bids.reduce((min, bid) => bid.price < min.price ? bid : min, bids[0]);
+        lowestFinalPrice = lowestBid.price;
+      }
+
+      // Dodavanje u podatke za regresiju
+      X.push([
+        auctionDuration,
+        lastCallDuration,
+        numBidders,
+        timeUntilFirstBid,
+        numTotalBids,
+        evaluationWeightEntropy,
+        hasMustHaveCriteria ? 1 : 0,
+        strictnessOfCriteria,
+        priceDecreaseInAuction
+      ]);
+
+      y.push([lowestFinalPrice]);
+    }
+
+    // Regresija
+    const regression = new MVLinearRegression(X, y);
+
+    // Racunanje regresije i priprema odgovora
+    const response = {
+      coefficients: variables.reduce((acc, name, index) => {
+        acc[name] = regression.weights[index][0];
+        return acc;
+      }, {})
+    };
+
+    return res.status(200).json(response);
+  }
+  catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error during regression analysis' });
+  }
+};
+
+module.exports = {
+  getBuyerAnalytics,
+  getRegressionData,
+};
