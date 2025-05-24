@@ -7,4 +7,6 @@ const { Op } = require('sequelize');
 
 router.get('/seller-analytics', verifyToken, sellerAnalyticsController.getAllSellerAnalytics);
 
+router.get('/seller-regression', verifyToken, sellerAnalyticsController.getSellerRegression);
+
 module.exports = router;
