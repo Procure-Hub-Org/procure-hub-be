@@ -171,7 +171,10 @@ const getBuyerAnalytics = async (req, res) => {
 
 const getRegressionData = async (req, res) => {
 
-  userId = req.user.id;
+  userId = req.query.id;
+  if (!userId) {
+    return res.status(400).json({ message: 'Missing user ID' });
+  }
 
   try {
 
