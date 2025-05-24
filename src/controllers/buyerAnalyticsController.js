@@ -206,9 +206,21 @@ const getRegressionData = async (req, res) => {
       },
     });
 
-     // Ako nema nikakvih pounuda na tenderima
+    // Ako nema nikakvih pounuda na tenderima
+    // vrati prazan odgovor
     if (bids.length === 0) {
-      return res.status(200).json({ message: 'Not enough data to perform analysis.' });
+      return res.status(200).json([
+        { name: "Auction Duration", value: 0 },
+        { name: "Last Call Duration", value: 0 },
+        { name: "Number of Bidders", value: 0 },
+        { name: "Time Until Last Bid", value: 0 },
+        { name: "Total Number of Bids", value: 0 },
+        { name: "Evaluation Weight Entropy", value: 0 },
+        { name: "Has Must-Have Criteria", value: 0 },
+        { name: "Strictness of Criteria", value: 0 },
+        { name: "Price Decrease in Auction", value: 0 },
+        { name: "Extended Duration", value: 0 }
+      ]);
     }
 
     // Aukcije vezane za tender
@@ -242,16 +254,16 @@ const getRegressionData = async (req, res) => {
     })).filter(d => d.procurementBids.length > 0);
 
     const variables = [
-      'auction_duration',
-      'last_call_duration',
-      'num_bidders',
-      'time_until_first_bid',
-      'num_total_bids',
-      'evaluation_weight_entropy',
-      'has_must_have_criteria',
-      'strictness_of_criteria',
-      'price_decrease_in_auction',
-      'extended_duration'
+      { key: 'auction_duration', name: 'Auction Duration' },
+      { key: 'last_call_duration', name: 'Last Call Duration' },
+      { key: 'num_bidders', name: 'Number of Bidders' },
+      { key: 'time_until_first_bid', name: 'Time Until Last Bid' },
+      { key: 'num_total_bids', name: 'Total Number of Bids' },
+      { key: 'evaluation_weight_entropy', name: 'Evaluation Weight Entropy' },
+      { key: 'has_must_have_criteria', name: 'Has Must-Have Criteria' },
+      { key: 'strictness_of_criteria', name: 'Strictness of Criteria' },
+      { key: 'price_decrease_in_auction', name: 'Price Decrease in Auction' },
+      { key: 'extended_duration', name: 'Extended Duration' }
     ];
     const X = []; // nezavisne varijable
     const y = []; // zavisne varijable
@@ -321,16 +333,23 @@ const getRegressionData = async (req, res) => {
       y.push([lowestFinalPrice]);
     }
 
-    // Regresija
+    // Regresija racun
     const regression = new MVLinearRegression(X, y);
 
-    // Racunanje regresije i priprema odgovora
-    const response = {
-      coefficients: variables.reduce((acc, name, index) => {
-        acc[name] = regression.weights[index][0];
-        return acc;
-      }, {})
-    };
+    // Log all raw regression coefficients before normalization
+    console.log("Raw regression coefficients:");
+    variables.forEach((variable, index) => {
+      console.log(`${variable.name}: ${regression.weights[index][0]}`);
+    });
+
+    // Najveći apsolutni koeficijent (za skaliranje u procente)
+    const maxAbsCoeff = Math.max(...regression.weights.map(w => Math.abs(w[0])) || [1]);
+
+    // Formiranje odgovora (pretvaranje koef. u procenete)
+    const response = variables.map((variable, index) => ({
+      name: variable.name,
+      value: Math.round((Math.abs(regression.weights[index][0]) / maxAbsCoeff) * 100)
+    }));
 
     return res.status(200).json(response);
   }
