@@ -250,7 +250,8 @@ const getRegressionData = async (req, res) => {
       'evaluation_weight_entropy',
       'has_must_have_criteria',
       'strictness_of_criteria',
-      'price_decrease_in_auction'
+      'price_decrease_in_auction',
+      'extended_duration'
     ];
     const X = []; // nezavisne varijable
     const y = []; // zavisne varijable
@@ -288,6 +289,7 @@ const getRegressionData = async (req, res) => {
       // Smanjenje cijene ponude
       let lowestFinalPrice = 0;
       let priceDecreaseInAuction = 0;
+      let extendedDuration = 0; //samo ako ima aukcija
 
       const auctionIsFinished = auction && auction.ending_time && new Date(auction.ending_time) <= new Date();
       // Racuna price decrease in auction samo ako ima aukciju
@@ -295,6 +297,7 @@ const getRegressionData = async (req, res) => {
         const winningBid = bids.find(bid => bid.auction_placement === 1);
         lowestFinalPrice = winningBid.auction_price;
         priceDecreaseInAuction = winningBid.price - winningBid.auction_price;
+        extendedDuration = auction.ending_time - auction.starting_time - auction.duration;
       }
       else {
         const lowestBid = bids.reduce((min, bid) => bid.price < min.price ? bid : min, bids[0]);
@@ -311,7 +314,8 @@ const getRegressionData = async (req, res) => {
         evaluationWeightEntropy,
         hasMustHaveCriteria ? 1 : 0,
         strictnessOfCriteria,
-        priceDecreaseInAuction
+        priceDecreaseInAuction,
+        extendedDuration
       ]);
 
       y.push([lowestFinalPrice]);
