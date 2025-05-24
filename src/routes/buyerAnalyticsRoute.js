@@ -5,5 +5,6 @@ const  buyerAnalyticsContoller  = require('../controllers/buyerAnalyticsControll
 
 // analitika za buyer
 router.get('/buyer-analytics', verifyToken, buyerAnalyticsContoller.getBuyerAnalytics);
+router.get('/buyer-regression', verifyToken, buyerAnalyticsContoller.getRegressionData);
 
 module.exports = router;
