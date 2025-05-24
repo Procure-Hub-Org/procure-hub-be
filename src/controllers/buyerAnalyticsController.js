@@ -198,7 +198,6 @@ const getRegressionData = async (req, res) => {
       return res.status(404).json({ message: 'No completed procurement requests' });
     }
 
-
     const procurementRequestsIds = procurementRequests.map(req => req.id);
     // Ponude vezane za tender
     const bids = await ProcurementBid.findAll({
@@ -339,11 +338,6 @@ const getRegressionData = async (req, res) => {
     // Regresija racun
     const regression = new MVLinearRegression(X, y);
 
-    // Log all raw regression coefficients before normalization
-    console.log("Raw regression coefficients:");
-    variables.forEach((variable, index) => {
-      console.log(`${variable.name}: ${regression.weights[index][0]}`);
-    });
 
     // Najveći apsolutni koeficijent (za skaliranje u procente)
     const maxAbsCoeff = Math.max(...regression.weights.map(w => Math.abs(w[0])) || [1]);
