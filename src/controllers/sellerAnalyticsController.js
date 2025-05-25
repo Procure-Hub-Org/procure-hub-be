@@ -29,7 +29,15 @@ exports.getAllSellerAnalytics = async (req, res) => {
 }
 exports.getSellerRegression = async (req, res) => {
 try{
-    const sellerId = req.user.id;
+    const role = req.user.role;
+    const idFromQuery = req.query.id;
+
+    let sellerId;
+    if (role === 'admin' && idFromQuery) {
+        sellerId= idFromQuery;
+    } else {
+        sellerId = req.user.id;
+    };
     const bids = await db.ProcurementBid.findAll({
         where: {seller_id: sellerId},
         include:[
