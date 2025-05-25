@@ -165,7 +165,10 @@ try{
         }   
         const probability = 1 / (1 + Math.exp(-z));
         const maxAbsCoeff = Math.max(...regression.weights.map(w => Math.abs(w[0])) || [1]);
-        const response = [
+           const response = [
+            {name: "Probability of winning next procurement",
+                value: parseFloat((probability * 100).toFixed(2))
+                },
             { name: "Bid Price", value: parseFloat(((regression.weights[0][0] / maxAbsCoeff) * 100).toFixed(2)) },
             { name: "Price Difference From Average", value: parseFloat(((regression.weights[1][0] / maxAbsCoeff) * 100).toFixed(2)) },
             { name: "Evaluation Score", value: parseFloat(((regression.weights[2][0] / maxAbsCoeff) * 100).toFixed(2)) },
