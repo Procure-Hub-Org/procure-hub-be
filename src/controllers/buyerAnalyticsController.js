@@ -345,7 +345,8 @@ const getRegressionData = async (req, res) => {
     // Formiranje odgovora (pretvaranje koef. u procenete)
     const response = variables.map((variable, index) => ({
       name: variable.name,
-      value: Math.round((Math.abs(regression.weights[index][0]) / maxAbsCoeff) * 100)
+      //value: Math.round((Math.abs(regression.weights[index][0]) / maxAbsCoeff) * 100) //koeficijenti mogu biti negativni
+      value: Math.round((regression.weights[index][0] / maxAbsCoeff) * 100)
     }));
 
     return res.status(200).json(response);
