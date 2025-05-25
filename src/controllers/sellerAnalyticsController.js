@@ -157,10 +157,10 @@ try{
         }   
         const probability = 1 / (1 + Math.exp(-z));
         
-            const response = [
-                {name: "Probability of winning next procurement",
-                value: parseFloat((probability * 100).toFixed(2))
-                },
+            res.status(200).json({
+                name: "Probability of winning next procurement",
+                value: parseFloat((probability * 100).toFixed(2)),
+                Metrics:[
                 { name: "Bid Price", value: parseFloat(regression.weights[0][0] * 100).toFixed(2) },
                 { name: "Price Difference From Average", value: parseFloat(regression.weights[1][0] * 100).toFixed(2) },
                 { name: "Evaluation Score", value: parseFloat(regression.weights[2][0] * 100).toFixed(2)},
@@ -169,9 +169,8 @@ try{
                 { name: "Participation in Auctions", value: parseFloat(regression.weights[5][0] * 100).toFixed(2) },
                 { name: "Final Price After Auction", value: parseFloat(regression.weights[6][0] * 100).toFixed(2)},
                 { name: "Price Decrease in Auction", value: parseFloat(regression.weights[7][0] * 100).toFixed(2)},
-                { name: "Bid Submission Phase", value: parseFloat(regression.weights[8][0] *1 00).toFixed(2) }
-            ];
-        res.status(200).json(response);
+                { name: "Bid Submission Phase", value: parseFloat(regression.weights[8][0] *100).toFixed(2) }
+            ]});
     }catch (error) {
         console.error("Error fetching seller regression: ", error.message);
         res.status(500).json({ message: error.message });
