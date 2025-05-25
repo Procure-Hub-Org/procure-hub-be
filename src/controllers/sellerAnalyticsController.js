@@ -164,21 +164,18 @@ try{
             z+= regression.weights[i] * lastRow[i];
         }   
         const probability = 1 / (1 + Math.exp(-z));
-        
-            const response = [
-                {name: "Probability of winning next procurement",
-                value: parseFloat((probability * 100).toFixed(2))
-                },
-                { name: "Bid Price", value: parseFloat(regression.weights[0][0] * 100).toFixed(2) },
-                { name: "Price Difference From Average", value: parseFloat(regression.weights[1][0] * 100).toFixed(2) },
-                { name: "Evaluation Score", value: parseFloat(regression.weights[2][0] * 100).toFixed(2)},
-                { name: "Time to Bid", value: parseFloat(regression.weights[3][0] * 100).toFixed(2) },
-                { name: "Number of Bid Revisions", value: parseFloat(regression.weights[4][0] * 100).toFixed(2) },
-                { name: "Participation in Auctions", value: parseFloat(regression.weights[5][0] * 100).toFixed(2) },
-                { name: "Final Price After Auction", value: parseFloat(regression.weights[6][0] * 100).toFixed(2)},
-                { name: "Price Decrease in Auction", value: parseFloat(regression.weights[7][0] * 100).toFixed(2)},
-                { name: "Bid Submission Phase", value: parseFloat(regression.weights[8][0] *100).toFixed(2) }
-            ];
+        const maxAbsCoeff = Math.max(...regression.weights.map(w => Math.abs(w[0])) || [1]);
+        const response = [
+            { name: "Bid Price", value: parseFloat(((regression.weights[0][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Price Difference From Average", value: parseFloat(((regression.weights[1][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Evaluation Score", value: parseFloat(((regression.weights[2][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Time to Bid", value: parseFloat(((regression.weights[3][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Number of Bid Revisions", value: parseFloat(((regression.weights[4][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Participation in Auctions", value: parseFloat(((regression.weights[5][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Final Price After Auction", value: parseFloat(((regression.weights[6][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Price Decrease in Auction", value: parseFloat(((regression.weights[7][0] / maxAbsCoeff) * 100).toFixed(2)) },
+            { name: "Bid Submission Phase", value: parseFloat(((regression.weights[8][0] / maxAbsCoeff) * 100).toFixed(2)) }
+        ];
         res.status(200).json(response);
     }catch (error) {
         console.error("Error fetching seller regression: ", error.message);
