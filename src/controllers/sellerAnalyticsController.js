@@ -49,8 +49,19 @@ try{
             }
         ]
         });
-        if(!bids.length) {
-            return res.status(404).json({ message: "No bids found for this seller." });
+        if (!bids.length) {
+            return res.status(200).json([
+                {name: "Probability of winning next procurement", value: 0},
+                { name: "Bid Price", value: 0 },
+                { name: "Price Difference From Average", value: 0 },
+                { name: "Evaluation Score", value: 0 },
+                { name: "Time to Bid", value: 0 },
+                { name: "Number of Bid Revisions", value: 0 },
+                { name: "Participation in Auctions", value: 0 },
+                { name: "Final Price After Auction", value: 0 },
+                { name: "Price Decrease in Auction", value: 0 },
+                { name: "Bid Submission Phase", value: 0 }
+            ]);
         }
 
         //group bids by auction_id
@@ -71,7 +82,7 @@ try{
                 //avg price - seller's price
                 const auctionBids = bids_by_auction[bid.auction_id] || [];
                 const avgPrice = auctionBids.reduce((sum, b) => sum + (parseFloat(b.price) || 0), 0) / auctionBids.length;
-                const priceDiffFromAvg = bidPrice - avgPrice;
+                const priceDiffFromAvg = bidPrice - avgPrice || 0;
                 //score given by the buyer
                 const evaluationScores = bid.evaluations || [];
                 const evaluationScore = evaluationScores.length > 0
@@ -90,7 +101,7 @@ try{
                 //price after auction
                 const priceAfterAuction = parseFloat(bid.auction_price) || 0;
                 //price decrease
-                const priceDecraseInAuction = priceAfterAuction - bidPrice;
+                const priceDecraseInAuction = priceAfterAuction - bidPrice || 0;
                 //console.log("Price after auction: ", priceDecraseInAuction);
                 //avg time between bids
                 let bidsHistory = await db.AuctionHistory.findAll({
@@ -105,10 +116,10 @@ try{
                     let totalTime = 0;
                     for(let i = 1; i < bidsHistory.length; i++) { 
                         totalTime += (new Date(bidsHistory[i].created_at) - new Date(bidsHistory[i-1].created_at)); 
-                        console.log("Time between bids: ", totalTime);
+                        //console.log("Time between bids: ", totalTime);
                     }
                     avgTime = totalTime / (bidsHistory.length - 1);
-                    console.log("Avg time between bids: ", avgTime);
+                    //console.log("Avg time between bids: ", avgTime);
                 }
                 const avgSubmissionPhase = avgTime/ (1000 * 60) || 0; // u minutima
                 //console.log("Avg submission phase: ", avgSubmissionPhase);
@@ -138,28 +149,29 @@ try{
 
         const lambda = 0.01; //regularization parameter
         const regression = new mlr(x, y,{intercept: false, lambda});
-         
         const lastRow = x[x.length - 1];
         let z = 0;
 
         for(let i = 0; i < regression.weights.length; i++) {
             z+= regression.weights[i] * lastRow[i];
         }   
-        const probabily = 1 / (1 + Math.exp(-z));
-        res.status(200).json({
-            probability_of_winning_next_procurement: probabily.toFixed(5) * 100, //convert to percentage
-            coefficients:{
-                bid_price: regression.weights[0],
-                price_diff_from_avg: regression.weights[1],
-                evaluation_score: regression.weights[2],
-                time_to_bid: regression.weights[3],
-                num_bid_revisions: regression.weights[4],
-                participation_in_auctions: regression.weights[5],
-                final_price_after_auction: regression.weights[6],
-                price_decrease_in_auction: regression.weights[7],
-                bid_submission_phase: regression.weights[8]
-            }
-        });
+        const probability = 1 / (1 + Math.exp(-z));
+        
+            const response = [
+                {name: "Probability of winning next procurement",
+                value: parseFloat((probability * 100).toFixed(2))
+                },
+                { name: "Bid Price", value: parseFloat(regression.weights[0][0] * 100).toFixed(2) },
+                { name: "Price Difference From Average", value: parseFloat(regression.weights[1][0] * 100).toFixed(2) },
+                { name: "Evaluation Score", value: parseFloat(regression.weights[2][0] * 100).toFixed(2)},
+                { name: "Time to Bid", value: parseFloat(regression.weights[3][0] * 100).toFixed(2) },
+                { name: "Number of Bid Revisions", value: parseFloat(regression.weights[4][0] * 100).toFixed(2) },
+                { name: "Participation in Auctions", value: parseFloat(regression.weights[5][0] * 100).toFixed(2) },
+                { name: "Final Price After Auction", value: parseFloat(regression.weights[6][0] * 100).toFixed(2)},
+                { name: "Price Decrease in Auction", value: parseFloat(regression.weights[7][0] * 100).toFixed(2)},
+                { name: "Bid Submission Phase", value: parseFloat(regression.weights[8][0] *1 00).toFixed(2) }
+            ];
+        res.status(200).json(response);
     }catch (error) {
         console.error("Error fetching seller regression: ", error.message);
         res.status(500).json({ message: error.message });
