@@ -45,6 +45,12 @@ https://procure-hub.up.railway.app/
 
 ---
 
+## Local installation and deployment  
+- [Video Tutorial for local installation and deployment](https://www.youtube.com/watch?v=87mz1i15hrM)
+
+
+---
+
 ## Development Roadmap  
 Our development is organized into logical sprints with two dedicated teams:  
 - **Team 1: Seller Features**  
