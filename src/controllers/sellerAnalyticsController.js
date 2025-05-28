@@ -102,8 +102,7 @@ try{
                 //score given by the buyer
                 const evaluationScores = bid.evaluations || [];
                 const evaluationScore = evaluationScores.length > 0
-                    ? evaluationScores.reduce((sum, ev) => sum + (parseFloat(ev.score) || 0), 0) / evaluationScores.length
-                    : 0;
+                    ? evaluationScores.reduce((sum, ev) => sum + (parseFloat(ev.score) || 0), 0) / evaluationScores.length : 0;
                 console.log("Evaluation score: ", evaluationScore);
                 //time taken to submit the bid
                 const timeToBid = (new Date(bid.price_submitted_at) - new Date(bid.auction.starting_time)) / (1000 * 60) || 0; // u minutima
@@ -165,13 +164,17 @@ try{
 
         const lambda = 0.01; //regularization parameter
         const regression = new mlr(x, y,{intercept: false, lambda});
-        const lastRow = x[x.length - 1];
-        let z = 0;
+        const sigmoid = z => 1 / (1 + Math.exp(-z));
+        let probabilities = x.map(row => {
+            let z = 0;
+            for (let i = 0; i < regression.weights.length; i++) {
+                z += regression.weights[i][0] * row[i];
+            }
+            return sigmoid(z);
+        });
 
-        for(let i = 0; i < regression.weights.length; i++) {
-            z+= regression.weights[i] * lastRow[i];
-        }   
-        const probability = 1 / (1 + Math.exp(-z));
+const probability = probabilities.reduce((sum, p) => sum + p, 0) / probabilities.length;
+
         const maxAbsCoeff = Math.max(...regression.weights.map(w => Math.abs(w[0])) || [1]);
            const response = [
             {name: "Probability of winning next procurement",
@@ -193,5 +196,7 @@ try{
         res.status(500).json({ message: error.message });
     }
 }
+
+
 
 
