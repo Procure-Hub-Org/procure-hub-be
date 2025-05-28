@@ -27,6 +27,7 @@ exports.getAllSellerAnalytics = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
+
 exports.getSellerRegression = async (req, res) => {
 try{
     const role = req.user.role;
@@ -38,13 +39,20 @@ try{
     } else {
         sellerId = req.user.id;
     };
+    const contracts = await db.Contract.findAll({
+        attributes: ['bid_id'],
+        raw: true
+    });
+    const winningBids = contracts.map(contract => contract.bid_id);
+
     const bids = await db.ProcurementBid.findAll({
         where: {seller_id: sellerId},
         include:[
             {
             model: db.ProcurementRequest,
             as: 'procurementRequest',
-            attributes: ['id', 'created_at']
+            where: {status: 'awarded'},
+            attributes: ['id', 'created_at', 'status']
             },
             {
             model: db.Auction,
@@ -96,12 +104,12 @@ try{
                 const evaluationScore = evaluationScores.length > 0
                     ? evaluationScores.reduce((sum, ev) => sum + (parseFloat(ev.score) || 0), 0) / evaluationScores.length
                     : 0;
-                //console.log("Evaluation score: ", evaluationScore);
+                console.log("Evaluation score: ", evaluationScore);
                 //time taken to submit the bid
                 const timeToBid = (new Date(bid.price_submitted_at) - new Date(bid.auction.starting_time)) / (1000 * 60) || 0; // u minutima
-                //console.log("Bid created at: ", bid.price_submitted_at);
-                //console.log("Auction starting time: ", bid.auction.starting_time);
-                //console.log("Time to bid: ", timeToBid);
+                console.log("Bid created at: ", bid.price_submitted_at);
+                console.log("Auction starting time: ", bid.auction.starting_time);
+                console.log("Time to bid: ", timeToBid);
                 //auction logs
                 const numBidRevisions = await db.AuctionHistory.count({where: {bid_id: bid.id}}) || 0;
                 //participation in auctions
@@ -109,8 +117,8 @@ try{
                 //price after auction
                 const priceAfterAuction = parseFloat(bid.auction_price) || 0;
                 //price decrease
-                const priceDecraseInAuction = priceAfterAuction - bidPrice || 0;
-                //console.log("Price after auction: ", priceDecraseInAuction);
+                const priceDecraseInAuction = bidPrice - priceAfterAuction|| 0;
+                console.log("Price after auction: ", priceDecraseInAuction);
                 //avg time between bids
                 let bidsHistory = await db.AuctionHistory.findAll({
                     where: {bid_id: bid.id},
@@ -118,19 +126,19 @@ try{
                     order: [['created_at', 'ASC']],
                     raw: true
                 });
-                //console.log("Bids history for bid_id =", bid.id, bidsHistory.map(b => b.created_at));
+                console.log("Bids history for bid_id =", bid.id, bidsHistory.map(b => b.created_at));
                 let avgTime = 0;
                 if(bidsHistory.length > 1) {
                     let totalTime = 0;
                     for(let i = 1; i < bidsHistory.length; i++) { 
                         totalTime += (new Date(bidsHistory[i].created_at) - new Date(bidsHistory[i-1].created_at)); 
-                        //console.log("Time between bids: ", totalTime);
+                        console.log("Time between bids: ", totalTime);
                     }
                     avgTime = totalTime / (bidsHistory.length - 1);
-                    //console.log("Avg time between bids: ", avgTime);
+                    console.log("Avg time between bids: ", avgTime);
                 }
                 const avgSubmissionPhase = avgTime/ (1000 * 60) || 0; // u minutima
-                //console.log("Avg submission phase: ", avgSubmissionPhase);
+                console.log("Avg submission phase: ", avgSubmissionPhase);
                 x.push([
                     bidPrice,
                     priceDiffFromAvg,
@@ -143,13 +151,13 @@ try{
                     avgSubmissionPhase
                 ]);
                 //winner or not 
-                y.push([bid.auction_placement === 1 ? 1 : 0]);
+                y.push([winningBids.includes(bid.id) ? 1 : 0]);
             }catch (error) {
                 console.error("Error processing bid: ", error.message);
             }
         }
-        //console.log("X: ", x);
-        //console.log("Y: ", y);  
+        console.log("X: ", x);
+        console.log("Y: ", y);  
 
         if (x.length < 2 || y.length < 2) {
             return res.status(400).json({ message: "Not enough data to perform regression analysis." });
@@ -185,3 +193,5 @@ try{
         res.status(500).json({ message: error.message });
     }
 }
+
+
