@@ -50,6 +50,27 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       });
+
+      User.hasMany(models.ContractLog, {
+        foreignKey: 'user_id',
+        as: 'contractLogs',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
+
+      User.hasMany(models.Notification, {
+        foreignKey: 'user_id',
+        as: 'notifications',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
+
+      User.hasMany(models.ContractChangeRequest, {
+        foreignKey: 'seller_id',
+        as: 'changeRequests',
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
     }
   }
 
@@ -156,6 +177,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
+    },
+    seller_bank_account: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   }, {
     sequelize,
