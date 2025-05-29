@@ -15,7 +15,7 @@ exports.uploadContractDocument = async (req, res) => {
         return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const contractId = req.body.contract_id;
+    const contractId = req.body.id;
     const originalName = file.originalname;
     const extension = path.extname(file.originalname);
     const uniqueName = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
@@ -35,19 +35,19 @@ exports.uploadContractDocument = async (req, res) => {
 }
 
 exports.deleteContractDocument = async (req, res) => {
-    const { contract_id } = req.params;
-    if (!contract_id) {
+    const { id } = req.params;
+    if (!id) {
         return res.status(400).json({ message: "No contract_id provided" });
     }
 
-    const contractDocument = await contractDocumentRepository.getContractDocument(contract_id);
+    const contractDocument = await contractDocumentRepository.getContractDocument(id);
     if (!contractDocument) {
         return res.status(404).json({ message: "Document not found" });
     }
 
     const filePath = contractDocument.contract_path;
 
-    const removedCount = await contractDocumentRepository.removeContractDocument(contract_id);
+    const removedCount = await contractDocumentRepository.removeContractDocument(id);
     if (!removedCount) {
         return res.status(500).json({ message: "Failed to delete document information" });
     }
@@ -58,13 +58,13 @@ exports.deleteContractDocument = async (req, res) => {
 }
 
 exports.getContractDocument = async (req, res) => {
-    const { contract_id } = req.params;
-    if (!contract_id) {
+    const { id } = req.params;
+    if (!id) {
         return res.status(400).json({ message: "No contract_id provided" });
     }
 
-    const contractDocument = await contractDocumentService.getContractDocument(contract_id);
-    if (!contractDocument) {
+    const contractDocument = await contractDocumentService.getContractDocument(id);
+    if (!contractDocument || !contractDocument.contract_path) {
         return res.status(404).json({ message: "Document not found" });
     }
 

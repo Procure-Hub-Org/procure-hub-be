@@ -25,6 +25,7 @@ const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js')
 const buyerAnalytics = require('./src/routes/buyerAnalyticsRoute.js');
 const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
 const contractRoutes = require('./src/routes/contractRoutes.js');
+const contractDocumentRoutes = require('./src/routes/contractDocumentRoutes.js');
 const disputeRoutes = require('./src/routes/disputeRoutes.js');
 const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
 
@@ -66,8 +67,10 @@ app.use('/api', buyerAnalytics);
 app.use('/api', sellerAnalytics);
 app.use('/api', auctionHistoryRoutes)
 app.use('/api', contractRoutes);
+app.use('/api', contractDocumentRoutes);
 app.use('/api', disputeRoutes);
 app.use('/api', sellerReportRoute);
+
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:
@@ -101,7 +104,10 @@ server.listen(serverConfig.port, () => {
     - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
     - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request
     - GET /api/bids/user/:userId - Fetch all seller's bids
-    - GET /api/auction/:id/history - Fetch auction history`);
+    - GET /api/auction/:id/history - Fetch auction history
+    - POST /api/contracts/:id/add-documents - Upload contract document (buyers only)
+    - DELETE /api/contracts/:id/remove-document - Remove contract document (buyers only)
+    - GET /api/contracts/:id/documents - Get contract documents (buyers only)`);
 });
 
 
