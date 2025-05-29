@@ -40,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      timestamp: {
+      created_at: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
@@ -52,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'contract_logs',
       underscored: true,
       timestamps: false,
+      
     }
   );
 

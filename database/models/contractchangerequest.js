@@ -51,7 +51,9 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'ContractChangeRequest',
       tableName: 'contract_change_requests',
       underscored: true,
-      timestamps: false, 
+      timestamps: true, 
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
     }
   );
 
