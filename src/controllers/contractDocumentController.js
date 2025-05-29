@@ -15,7 +15,8 @@ exports.uploadContractDocument = async (req, res) => {
         return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const contractId = req.body.id;
+    //const contractId = req.body.id;
+    const contractId = req.params.id; // contract ID is passed as a URL parameter
     const originalName = file.originalname;
     const extension = path.extname(file.originalname);
     const uniqueName = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
