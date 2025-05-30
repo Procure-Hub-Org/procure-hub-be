@@ -32,7 +32,20 @@ exports.uploadContractDocument = async (req, res) => {
         return res.status(500).json({ message: "Failed to save document information" });
     }
 
-    return res.status(200).json({ message: "Uploaded successfully", contractDocument });
+   const fileUrl = await supabaseBucketService.getSignedUrl(result.path);
+   const response = {
+        message: "Uploaded successfully",
+        contractDocument: {
+            id: contractDocument.id,
+            original_name: contractDocument.original_name,
+            contract_path: contractDocument.contract_path,
+            file_type: contractDocument.file_type,
+            updatedAt: contractDocument.updatedAt,
+            file_url: fileUrl
+        }
+    };
+
+    return res.status(200).json(response);
 }
 
 exports.deleteContractDocument = async (req, res) => {
