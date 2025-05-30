@@ -27,6 +27,7 @@ const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
 const contractRoutes = require('./src/routes/contractRoutes.js');
 const disputeRoutes = require('./src/routes/disputeRoutes.js');
 const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
+const contractChangeRequestRoutes = require('./src/routes/contractChangeRequestRoute.js');
 
 const app = express();
 
@@ -68,6 +69,8 @@ app.use('/api', auctionHistoryRoutes)
 app.use('/api', contractRoutes);
 app.use('/api', disputeRoutes);
 app.use('/api', sellerReportRoute);
+app.use('/api', contractChangeRequestRoutes);
+
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:
