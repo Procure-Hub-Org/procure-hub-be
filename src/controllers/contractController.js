@@ -119,23 +119,23 @@ const createContract = async (req, res) => {
       timeline: req.body.timeline,
       policy,
       schedule,
-      logoCid: 'logoCid',
+      logoCid: 'logoImage'
     });
 
     // Pošalji mail selleru
     await sendMail({
       to: seller.email,
       subject: 'Contract Issued for Your Bid',
-      html,
+      html: html,
       text: `Dear ${seller.first_name}, a contract has been issued for your bid. Please check your dashboard for details.`,
-      attachments: [
-       
-         {
-           filename: 'logo-no-background.png',
-             path: path.join(__dirname, '..', '..', 'public', 'logo', 'logo-no-background.png'),
-            logoCid: 'logoCid'
-         }
-      ]
+        attachments: [
+                     {
+                         filename: 'logo.png',
+                         path: path.join(__dirname, '../../public/logo/logo-no-background.png'), // Path to the image file
+                         cid: 'logoImage', // this must match the one used in <img src="cid:...">   
+                         contentDisposition: 'inline', // Ensure the image is displayed inline	 
+                     }
+                 ],
     });
   }
 
