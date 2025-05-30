@@ -1,3 +1,5 @@
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
 # ProcureHub  
 *A comprehensive web-based procurement and auction platform*
 
@@ -83,11 +85,5 @@ Our development is organized into logical sprints with two dedicated teams:
 - **[Muhamed Husić](https://github.com/HMByteSensei)**
 - **[Nedim Banda](https://github.com/nbanda1)** 
 ---
-
-## License
-
-This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
-
-You may use, copy, modify, and share this project **for non-commercial purposes only**, and with proper attribution.
 
 © 2025 ProcureHub. All rights reserved.
