@@ -1,54 +1,161 @@
-const { Contract, ProcurementRequest, ProcurementBid, User, Dispute, Sequelize } = require('../../database/models');
-const { Op } =  require('sequelize');
-
+const {
+  Contract,
+  ProcurementRequest,
+  ProcurementBid,
+  User,
+  PaymentInstruction,
+  ContractLog,
+  Notification,
+  Sequelize,
+} = require('../../database/models');
+const { Op } = require('sequelize');
+const { sendMail } = require('../services/mailService'); 
+const { generateContractIssuedEmailHtml } = require('../utils/templates/emailTemplates');
+const path = require('path');
 const createContract = async (req, res) => {
   try {
-    const { procurement_request_id, bid_id } = req.body;
+    const { procurement_request_id, bid_id, status, payment_instructions } = req.body;
 
-    if (!procurement_request_id || !bid_id) {
-      return res.status(400).json({ message: 'Missing required fields: procurement_request_id and bid_id' });
+    if (!procurement_request_id || !bid_id || !status) {
+      return res.status(400).json({ message: 'Missing required fields: procurement_request_id, bid_id, status' });
     }
 
-    // Pronađi request
+    if (!['issued', 'draft'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid contract status. Must be "issued" or "draft".' });
+    }
+
     const procurementRequest = await ProcurementRequest.findByPk(procurement_request_id);
     if (!procurementRequest) {
       return res.status(404).json({ message: 'Procurement request not found' });
     }
 
-    //  Provjeri da li je trenutni korisnik vlasnik (buyer) tog requesta
     if (procurementRequest.buyer_id !== req.user.id) {
       return res.status(403).json({ message: 'You are not authorized to award this procurement request' });
     }
 
-    // Provjeri da li je status 'closed'
     if (procurementRequest.status !== 'closed') {
       return res.status(400).json({ message: 'Only closed procurement requests can be awarded' });
     }
 
-    //  Pronađi bid
     const bid = await ProcurementBid.findByPk(bid_id);
-    if (!bid) {
-      return res.status(404).json({ message: 'Bid not found' });
+    if (!bid || bid.procurement_request_id !== procurement_request_id) {
+      return res.status(400).json({ message: 'Invalid bid or bid does not belong to the given procurement request' });
     }
 
-    // Provjeri da li je bid povezan sa datim requestom
-    if (bid.procurement_request_id !== procurement_request_id) {
-      return res.status(400).json({ message: 'Bid does not belong to the given procurement request' });
+    const existingContract = await Contract.findOne({
+      where: {
+        bid_id,
+        procurement_request_id,
+      },
+    });
+    if (existingContract) {
+      return res.status(400).json({
+        message: 'A contract already exists for this bid and procurement request.',
+      });
     }
 
     // Kreiraj ugovor
     const contract = await Contract.create({
       procurement_request_id,
-      bid_id
+      bid_id,
+      status,
+      price: req.body.price,
+      timeline: req.body.timeline,
     });
 
-    // 7. Ažuriraj status u 'awarded'
+    // Kreiraj instrukcije za plaćanje
+    if (payment_instructions && Array.isArray(payment_instructions.payments)) {
+      for (const instr of payment_instructions.payments) {
+        await PaymentInstruction.create({
+          contract_id: contract.id,
+          payment_policy: payment_instructions.policy || null,
+          date: instr.date,
+          amount: instr.amount,
+        });
+      }
+    }
+
+    // Loguj status
+    await ContractLog.create({
+      contract_id: contract.id,
+      action: status === 'issued' ? 'Contract issued' : 'Contract saved as draft',
+      user_id: req.user.id,
+    });
+
+    // Ažuriraj status zahtjeva
     procurementRequest.status = 'awarded';
     await procurementRequest.save();
 
+    if (status === 'issued') {
+      // Notifikacija za seller-a
+      const seller = await User.findByPk(bid.seller_id);
+      if (seller) {
+        await Notification.create({
+          contract_id: contract.id,
+          user_id: seller.id,
+          text: `Contract has been issued for your bid.`,
+        });
+
+       if (status === 'issued') {
+  // Pribavi potrebne podatke za email
+  const seller = await User.findByPk(bid.seller_id);
+  const buyer = await User.findByPk(procurementRequest.buyer_id);
+
+  // Pripremi podatke za email template
+  const paymentInstructions = await PaymentInstruction.findAll({ where: { contract_id: contract.id } });
+  const schedule = paymentInstructions.map(instr => ({
+    date: instr.date.toISOString().split('T')[0],  // formatiraj datum npr. yyyy-mm-dd
+    amount: instr.amount,
+  }));
+
+  const policy = paymentInstructions.length > 0 ? paymentInstructions[0].payment_policy : 'N/A';
+
+  if (seller) {
+    const html = generateContractIssuedEmailHtml({
+      seller,
+      buyer,
+      requestTitle: procurementRequest.title || 'N/A',
+      price: req.body.price,
+      timeline: req.body.timeline,
+      policy,
+      schedule,
+      logoCid: 'logoCid',
+    });
+
+    // Pošalji mail selleru
+    await sendMail({
+      to: seller.email,
+      subject: 'Contract Issued for Your Bid',
+      html,
+      text: `Dear ${seller.first_name}, a contract has been issued for your bid. Please check your dashboard for details.`,
+      attachments: [
+       
+         {
+           filename: 'logo-no-background.png',
+             path: path.join(__dirname, '..', '..', 'public', 'logo', 'logo-no-background.png'),
+            logoCid: 'logoCid'
+         }
+      ]
+    });
+  }
+
+}
+ }
+
+      // Notifikacija za admina
+      const admins = await User.findAll({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await Notification.create({
+          contract_id: contract.id,
+          user_id: admin.id,
+          text: `New contract has been issued.`,
+        });
+      }
+    }
+
     return res.status(201).json({
-      message: 'Contract created and procurement request status updated to awarded',
-      contract
+      message: `Contract created with status "${status}"`,
+      contract,
     });
 
   } catch (error) {
@@ -56,6 +163,8 @@ const createContract = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
 
 /* --- get contracts based on role ---*/
 const getContracts = async (req, res) => {

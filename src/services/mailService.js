@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const { emailUser, emailPass } = require('../config/email');
 const {generateOutbidEmailHtml} = require('../utils/templates/emailTemplates');
+const { generateContractIssuedEmailHtml } = require('../utils/templates/emailTemplates');
+
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
