@@ -84,4 +84,10 @@ Our development is organized into logical sprints with two dedicated teams:
 - **[Nedim Banda](https://github.com/nbanda1)** 
 ---
 
+## License
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+
+You may use, copy, modify, and share this project **for non-commercial purposes only**, and with proper attribution.
+
 © 2025 ProcureHub. All rights reserved.
