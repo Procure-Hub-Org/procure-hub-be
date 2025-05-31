@@ -446,9 +446,6 @@ const getContracts = async (req, res) => {
 module.exports = {
   createContract,
   getContracts,
-<<<<<<< HEAD
-  updateContract
-=======
+  updateContract,
   getContractLogs,
->>>>>>> 9/GetContractLogs
 };
