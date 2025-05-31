@@ -439,7 +439,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       {
         model: ProcurementBid, // sve ponude vezane za ugovor
         as: 'bid',
-        attributes: ['id'],
+        attributes: ['id', 'price', 'auction_price', 'timeline'],
         include: [
           {
             model: User, // info o vlasniku ponude (seller)
@@ -482,6 +482,12 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
     const contractDocument = await contractDocumentService.getContractDocument(contract.id);
 
     return {
+      //entire contract info
+      contract: contract,
+      //procuremnet request info
+      procurementRequest: contract.procurementRequest,
+      // bid info
+      bid: contract.bid,
       // contract details
       contract_id: contract.id,
       award_date: contract.created_at,
@@ -514,7 +520,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       })),
     };
   }));
-
+  console.log('Fetched contracts:', response);
   return response;
 };
 
