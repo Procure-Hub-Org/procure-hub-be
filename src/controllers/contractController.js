@@ -524,7 +524,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       })),
     };
   }));
-  console.log('Fetched contracts:', response);
+
   return response;
 };
 
