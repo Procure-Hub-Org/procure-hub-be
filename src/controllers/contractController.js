@@ -7,11 +7,72 @@ const {
   ContractLog,
   Notification,
   Sequelize,
+  Dispute,
 } = require('../../database/models');
 const { Op } = require('sequelize');
 const { sendMail } = require('../services/mailService'); 
 const { generateContractIssuedEmailHtml } = require('../utils/templates/emailTemplates');
 const path = require('path');
+
+// Get all logs for a specific contract (admin only)
+const getContractLogs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(403).json({ 
+        message: 'Your account is not active. Please contact support.' 
+      });
+    }
+
+    // Check if user is admin
+    if (user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Admin privileges required.' 
+      });
+    }
+
+    // Check if contract exists - MODIFIED to only request existing columns
+    const contract = await Contract.findByPk(id, {
+      attributes: ['id', 'procurement_request_id', 'bid_id', 'status', 'price', 'created_at', 'updated_at'],
+      // Only request columns that actually exist in the database
+    });
+
+    if (!contract) {
+      return res.status(404).json({ 
+        message: 'Contract not found' 
+      });
+    }
+
+    // Get all logs for this contract
+    const logs = await ContractLog.findAll({
+      where: { contract_id: id },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'first_name', 'last_name', 'email', 'company_name']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    return res.status(200).json({
+      message: 'Contract logs retrieved successfully',
+      logs
+    });
+
+  } catch (error) {
+    console.error('Error fetching contract logs:', error);
+    return res.status(500).json({ 
+      message: 'Something went wrong', 
+      error: error.message 
+    });
+  }
+};
+
 const createContract = async (req, res) => {
   try {
     const { procurement_request_id, bid_id, status, payment_instructions } = req.body;
@@ -385,5 +446,9 @@ const getContracts = async (req, res) => {
 module.exports = {
   createContract,
   getContracts,
+<<<<<<< HEAD
   updateContract
+=======
+  getContractLogs,
+>>>>>>> 9/GetContractLogs
 };
