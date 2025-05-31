@@ -52,6 +52,7 @@ const generateOutbidEmailHtml = ({ user, requestTitle, auctionPrice, auctionId, 
         </html>
     `;
 };
+
 const generateContractIssuedEmailHtml = ({ seller, buyer, requestTitle, price, timeline, policy, schedule, logoCid }) => {
   const scheduleRows = schedule.map(item => `
     <tr>
@@ -117,7 +118,63 @@ const generateContractIssuedEmailHtml = ({ seller, buyer, requestTitle, price, t
   `;
 };
 
+const generateContractSignedEmailHtml = ({ user, requestTitle,originalName, price,contractId, logoCid }) => {
+    return `
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                <tr style="background-color: #1a1a1a;">
+                    <td style="padding: 20px; text-align: center; background-color: #fff;">
+                        <img src="cid:${logoCid}" alt="ProcureHub logo" style="height: 50px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 20px;">
+                        <h2 style="margin: 0; color: #124662;">ProcureHub</h2>
+                        <p style="margin-top: 20px;">
+                            Dear <strong>${user.first_name} ${user.last_name}</strong>,
+                        </p>
+                        <p>
+                            We are pleased to inform you that the contract for the procurement request <strong>"${requestTitle}"</strong> has been <strong>accepted and signed</strong> by the seller.
+                        </p>
+
+                        <table width="100%" cellpadding="10" cellspacing="0" style="margin-top: 20px; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="background-color: #eee; color: #124662;">
+                                    <th>Original name</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${originalName}</td>
+                                    <td>${price}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p style="margin-top: 20px;">
+                            You can view the contract and further details by logging into your dashboard.
+                        </p>
+
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${process.env.FRONTEND_URL}/contracts/${contractId}" 
+                            style="background-color: #5cb85c; color: white; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold;">
+                                View Contract
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+};
+
+
 module.exports = {
-     generateContractIssuedEmailHtml,
-    generateOutbidEmailHtml
+    generateOutbidEmailHtml,
+    generateContractIssuedEmailHtml,
+    generateContractSignedEmailHtml,    
 };

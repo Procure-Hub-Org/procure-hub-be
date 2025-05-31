@@ -13,5 +13,7 @@ router.get('/contracts/:id', verifyToken, controller.getContractById);
 // Get all logs for a specific contract (admin only)
 router.get('/contracts/:id/logs', verifyToken, contractController.getContractLogs);
 
+router.post('/contracts/:id/accept', verifyToken, controller.acceptContract);
+
 module.exports = router;
 
