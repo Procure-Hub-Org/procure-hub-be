@@ -27,6 +27,8 @@ const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
 const contractRoutes = require('./src/routes/contractRoutes.js');
 const disputeRoutes = require('./src/routes/disputeRoutes.js');
 const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
+const notificationRoutes = require('./src/routes/notificationRoutes');
+
 
 const app = express();
 
@@ -68,6 +70,8 @@ app.use('/api', auctionHistoryRoutes)
 app.use('/api', contractRoutes);
 app.use('/api', disputeRoutes);
 app.use('/api', sellerReportRoute);
+app.use('/api', notificationRoutes);
+
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
     console.log(`API endpoints dostupni na:
@@ -101,7 +105,8 @@ server.listen(serverConfig.port, () => {
     - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
     - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request
     - GET /api/bids/user/:userId - Fetch all seller's bids
-    - GET /api/auction/:id/history - Fetch auction history`);
+    - GET /api/auction/:id/history - Fetch auction history
+    - GET /api/notifications/:userId - Get user notifications`);
 });
 
 

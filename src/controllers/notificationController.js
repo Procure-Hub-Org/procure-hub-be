@@ -1,8 +1,9 @@
+const { Notification, Contract, ProcurementRequest } = require('../../database/models');
 
-const getUserNotifications = async (req, res) => {
-  const userId = req.params.userId;
-
+exports.getNotificationsByUserId = async (req, res) => {
   try {
+    const { userId } = req.params;
+
     const notifications = await Notification.findAll({
       where: { user_id: userId },
       attributes: ['id', 'contract_id', 'text'],
@@ -10,30 +11,27 @@ const getUserNotifications = async (req, res) => {
         {
           model: Contract,
           as: 'contract',
-          attributes: [],
           include: [
             {
               model: ProcurementRequest,
               as: 'procurementRequest',
               attributes: ['title'],
-            }
-          ]
-        }
+            },
+          ],
+        },
       ],
-      raw: true
     });
 
-    const response = notifications.map(n => ({
+    const result = notifications.map(n => ({
       id: n.id,
       contract_id: n.contract_id,
       text: n.text,
-      procurement_request_title: n['contract.procurementRequest.title']
+      procurement_request_title: n.contract?.procurementRequest?.title || null
     }));
 
-    return res.status(200).json({ success: true, data: response });
-
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
