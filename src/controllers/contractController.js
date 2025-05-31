@@ -234,6 +234,10 @@ const updateContract = async (req, res) => {
     const { status, price, timeline, payment_instructions } = req.body;
     const contractId = req.params.id;
 
+    const contract_previous_status = await Contract.findByPk(contractId, {
+      attributes: ['status'],
+    });
+
     if (!status || !['issued', 'draft', 'edited'].includes(status)) {
       return res.status(400).json({ message: 'Invalid contract status. Must be "issued", "edited" or "draft".' });
     }
@@ -285,12 +289,12 @@ const updateContract = async (req, res) => {
     // Loguj akciju
     await ContractLog.create({
       contract_id: contract.id,
-      action: status === 'issued' ? 'Contract issued (updated)' : 'Contract saved as draft (updated)',
+      action: 'Contract updated (status: edited)',
       user_id: req.user.id,
     });
 
     // Ažuriraj status zahtjeva ako je ugovor izdan
-    if (status === 'issued') {
+    if (contract_previous_status.status === 'issued' || contract_previous_status.status === 'edited') {
       procurementRequest.status = 'awarded';
       await procurementRequest.save();
 
