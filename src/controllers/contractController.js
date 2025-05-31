@@ -70,7 +70,7 @@ const createContract = async (req, res) => {
 const fetchContracts = async ({ user, query, contractId = null }) => {
   const isAdmin = user.role === 'admin';
 
-  // formiranje filtera
+  // Formiranje filtera
   const filter = {};
 
   // filtrira rezultate prema rolama buyer/seller
@@ -82,14 +82,12 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
     // email query za seller usera filtrira prema email buyera
     if (user.role === 'buyer') {
       roleFilter.push({ '$procurementRequest.buyer.id$': user.id });
-
       if (query.email) {
         roleFilter.push({ '$bid.seller.email$': query.email });
       }
 
     } else if (user.role === 'seller') {
       roleFilter.push({ '$bid.seller.id$': user.id });
-
       if (query.email) {
         roleFilter.push({ '$procurementRequest.buyer.email$': query.email });
       }
@@ -98,22 +96,25 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
   }
   // filtrira po contract id
   if (contractId) { filter['id'] = contractId; }
-  // filter za datum
-  if (query.date) {
-    filter['created_at'] = {
-      [Op.eq]: new Date(query.date)
-    };
-  }
+
+  // filtriranje po datumu
+  if (query.start_date || query.end_date) {
+    filter['created_at'] = {};
+    if (query.start_date) { filter['created_at'][Op.gte] = new Date(query.start_date); }
+    if (query.end_date) { filter['created_at'][Op.lte] = new Date(query.end_date); }
+  } 
+  // ako zelimo tacan datum query parametar je "date"
+  else if (query.date) { filter['created_at'] = { [Op.eq]: new Date(query.date) }; }
+
   // filter po kategoriji u koju spada procurement request
   if (query.category) {
     filter['$procurementRequest.procurementCategory.name$'] = query.category;
   }
+
   //filter po statusu ugovora
-  if (query.status) {
-    filter['status'] = query.status;
-  }
+  if (query.status) { filter['status'] = query.status; }
 
-
+  // Dobavljanje ugovora
   const contracts = await Contract.findAll({
     where: filter,
     include: [
@@ -161,7 +162,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       // broj disputes za ugovor
       include: [
         [Sequelize.fn('COUNT', Sequelize.col('disputes.id')), 'number_of_disputes']
-      ]
+      ],
     },
     group: [
       'Contract.id',
@@ -174,10 +175,10 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
     ]
   });
 
-  // formiranje odgovora
+  // Formiranje odgovora
   const response = await Promise.all(contracts.map(async contract => {
     // dobavljanje dokumenta za ugovor
-    //const contractDocument = await contractDocumentService.getContractDocument(contract.id);
+    const contractDocument = await contractDocumentService.getContractDocument(contract.id);
 
     return {
       // contract details
@@ -186,7 +187,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       price: contract.price,
       delivery_terms: contract.timeline,
       status: contract.status,
-      //contract_document_url: contractDocument?.file_url || null,
+      contract_document_url: contractDocument?.file_url || null,
       number_of_disputes: contract.dataValues.number_of_disputes,
       // buyer details
       buyer_id: contract.procurementRequest.buyer.id,
@@ -215,6 +216,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
   return response;
 };
 
+// Vrati sve ugovore buyera/sellera
 const getContracts = async (req, res) => {
   try {
     const contracts = await fetchContracts({ user: req.user, query: req.query });
@@ -226,6 +228,7 @@ const getContracts = async (req, res) => {
   }
 }
 
+// Vrati ugovor sa id-em
 const getContractById = async (req, res) => {
   try {
     const contractId = req.params.id;
