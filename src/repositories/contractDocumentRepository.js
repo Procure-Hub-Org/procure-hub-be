@@ -13,8 +13,12 @@ exports.addContractDocument = async (contractId, originalName, contractPath, fil
             }
         );
 
-        return affectedRows > 0;
-    }catch (error) {
+        if (affectedRows === 0) {
+            return null; 
+        }
+        const updatedContract = await db.Contract.findByPk(contractId);
+        return updatedContract;
+    } catch (error) {
         console.error("Error adding a contract document: ", error);
         return null;
     }
