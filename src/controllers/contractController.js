@@ -294,7 +294,7 @@ const updateContract = async (req, res) => {
     });
 
     // Ažuriraj status zahtjeva ako je ugovor izdan
-    if (contract_previous_status.status === 'issued' || contract_previous_status.status === 'edited') {
+    if (status === 'issued' || status === 'edited') {
       procurementRequest.status = 'awarded';
       await procurementRequest.save();
 
