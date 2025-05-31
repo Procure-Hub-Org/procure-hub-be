@@ -163,7 +163,136 @@ const createContract = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+const updateContract = async (req, res) => {
+  try {
+    const { status, price, timeline, payment_instructions } = req.body;
+    const contractId = req.params.id;
 
+    if (!status || !['issued', 'draft'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid contract status. Must be "issued" or "draft".' });
+    }
+
+    const contract = await Contract.findByPk(contractId);
+    if (!contract) {
+      return res.status(404).json({ message: 'Contract not found' });
+    }
+       if (contract.status !== 'draft') {
+      return res.status(400).json({ message: 'Only contracts with status "draft" can be updated.' });
+    }
+
+    const procurementRequest = await ProcurementRequest.findByPk(contract.procurement_request_id);
+    if (!procurementRequest) {
+      return res.status(404).json({ message: 'Procurement request not found' });
+    }
+
+    if (procurementRequest.buyer_id !== req.user.id) {
+      return res.status(403).json({ message: 'You are not authorized to update this contract' });
+    }
+
+    const bid = await ProcurementBid.findByPk(contract.bid_id);
+    if (!bid) {
+      return res.status(404).json({ message: 'Bid not found' });
+    }
+
+    // Ažuriraj osnovne podatke
+    contract.status = status;
+    contract.price = price || contract.price;
+    contract.timeline = timeline || contract.timeline;
+    await contract.save();
+
+    // Očisti stare instrukcije ako postoje
+    await PaymentInstruction.destroy({ where: { contract_id: contract.id } });
+
+    // Kreiraj nove instrukcije za plaćanje ako su poslane
+    if (payment_instructions && Array.isArray(payment_instructions.payments)) {
+      for (const instr of payment_instructions.payments) {
+        await PaymentInstruction.create({
+          contract_id: contract.id,
+          payment_policy: payment_instructions.policy || null,
+          date: instr.date,
+          amount: instr.amount,
+        });
+      }
+    }
+
+    // Loguj akciju
+    await ContractLog.create({
+      contract_id: contract.id,
+      action: status === 'issued' ? 'Contract issued (updated)' : 'Contract saved as draft (updated)',
+      user_id: req.user.id,
+    });
+
+    // Ažuriraj status zahtjeva ako je ugovor izdan
+    if (status === 'issued') {
+      procurementRequest.status = 'awarded';
+      await procurementRequest.save();
+
+      const seller = await User.findByPk(bid.seller_id);
+
+      if (seller) {
+        // Kreiraj notifikaciju za seller-a
+        await Notification.create({
+          contract_id: contract.id,
+          user_id: seller.id,
+          text: `Contract has been issued for your bid.`,
+        });
+
+        // Pripremi podatke za email
+        const buyer = await User.findByPk(procurementRequest.buyer_id);
+        const paymentInstructions = await PaymentInstruction.findAll({ where: { contract_id: contract.id } });
+        const schedule = paymentInstructions.map(instr => ({
+          date: instr.date.toISOString().split('T')[0],
+          amount: instr.amount,
+        }));
+        const policy = paymentInstructions.length > 0 ? paymentInstructions[0].payment_policy : 'N/A';
+
+        const html = generateContractIssuedEmailHtml({
+          seller,
+          buyer,
+          requestTitle: procurementRequest.title || 'N/A',
+          price: contract.price,
+          timeline: contract.timeline,
+          policy,
+          schedule,
+          logoCid: 'logoImage',
+        });
+
+        await sendMail({
+          to: seller.email,
+          subject: 'Contract Issued for Your Bid',
+          html,
+          text: `Dear ${seller.first_name}, a contract has been issued for your bid.`,
+          attachments: [
+            {
+              filename: 'logo.png',
+              path: path.join(__dirname, '../../public/logo/logo-no-background.png'),
+              cid: 'logoImage',
+              contentDisposition: 'inline',
+            },
+          ],
+        });
+      }
+
+      // Notifikacije za admine
+      const admins = await User.findAll({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await Notification.create({
+          contract_id: contract.id,
+          user_id: admin.id,
+          text: `New contract has been issued.`,
+        });
+      }
+    }
+
+    return res.status(200).json({
+      message: `Contract successfully updated`,
+      contract,
+    });
+  } catch (error) {
+    console.error('Error updating contract:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 
 /* --- get contracts based on role ---*/
@@ -256,4 +385,5 @@ const getContracts = async (req, res) => {
 module.exports = {
   createContract,
   getContracts,
+  updateContract
 };
