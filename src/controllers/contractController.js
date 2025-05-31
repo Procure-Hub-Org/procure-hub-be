@@ -234,8 +234,8 @@ const updateContract = async (req, res) => {
     const { status, price, timeline, payment_instructions } = req.body;
     const contractId = req.params.id;
 
-    if (!status || !['issued', 'draft'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid contract status. Must be "issued" or "draft".' });
+    if (!status || !['issued', 'draft', 'edited'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid contract status. Must be "issued", "edited" or "draft".' });
     }
 
     const contract = await Contract.findByPk(contractId);
