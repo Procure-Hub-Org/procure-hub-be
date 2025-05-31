@@ -242,8 +242,9 @@ const updateContract = async (req, res) => {
     if (!contract) {
       return res.status(404).json({ message: 'Contract not found' });
     }
-       if (contract.status !== 'draft') {
-      return res.status(400).json({ message: 'Only contracts with status "draft" can be updated.' });
+
+    if (contract.status !== 'draft' && contract.status !== 'edited' && contract.status !== 'issued') {
+      return res.status(400).json({ message: 'Only contracts with status "draft", "edited" and "issued" can be updated.' });
     }
 
     const procurementRequest = await ProcurementRequest.findByPk(contract.procurement_request_id);
