@@ -7,10 +7,19 @@ const supabaseUrl = supabaseConfig.url;
 const supabaseKey = supabaseConfig.secretKey;
 const bucketName = supabaseConfig.bucketName;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+let supabase = null;
+
+if (supabaseUrl && supabaseKey && bucketName) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+}
 
 
 exports.uploadFile = async (fileBuffer, contentType, destinationPath) => {
+    if (!supabase) {
+        console.error('Supabase client is not initialized. Check your configuration.');
+        return null;
+    }
+
     const { data, error } = await supabase.storage.from(bucketName)
     .upload(destinationPath, fileBuffer, {
         contentType: contentType,
@@ -28,6 +37,11 @@ exports.uploadFile = async (fileBuffer, contentType, destinationPath) => {
 }
 
 exports.deleteFile = async (filePath) => {
+    if (!supabase) {
+        console.error('Supabase client is not initialized. Check your configuration.');
+        return null;
+    }
+
     const { error } = await supabase.storage.from(bucketName).remove([filePath]);
 
     if (error) {
@@ -39,6 +53,11 @@ exports.deleteFile = async (filePath) => {
 }
 
 exports.getSignedUrl = async (filePath, expiresIn = 86400) => { // 86400 = 24 hours
+    if (!supabase) {
+        console.error('Supabase client is not initialized. Check your configuration.');
+        return null;
+    }
+
     const cacheKey = `signedurl:${filePath}`;
     if (redisConnected()) {
         const cachedUrl = await redisClient().get(cacheKey);
