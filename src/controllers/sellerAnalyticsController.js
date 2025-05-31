@@ -104,12 +104,8 @@ try{
                 //avg price - seller's price
                 const key = bid.auction_id === null ? 'no_auction' : bid.auction_id;
                 const auctionBids = bids_by_auction[key] || [];
-
-                console.log("Auction bids: ", auctionBids.map(b => ({id: b.id, price: b.price})));
                 const avgPrice = auctionBids.reduce((sum, b) => sum + (parseFloat(b.price) || 0), 0) / auctionBids.length || 0;
-                console.log("Avg price: ", avgPrice);
                 const priceDiffFromAvg = bidPrice - avgPrice || 0;
-                console.log("Price diff from avg: ", priceDiffFromAvg);
 
                 //score given by the buyer
                 const evaluationScores = bid.evaluations || [];
