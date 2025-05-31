@@ -67,6 +67,11 @@ const createContract = async (req, res) => {
 };
 
 /* --- zajednicka logika za getContracts i getContractById funkcije ---*/
+/* query parameters: email, 
+                     status (of contract), 
+                     date (exact date), 
+                     start_date, end_date (contracts in range),
+                     category (of request linked to contract) */
 const fetchContracts = async ({ user, query, contractId = null }) => {
   const isAdmin = user.role === 'admin';
 
