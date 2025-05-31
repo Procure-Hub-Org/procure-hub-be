@@ -1,5 +1,8 @@
-const { Contract, ProcurementRequest, ProcurementBid, User, Dispute, Sequelize } = require('../../database/models');
-const { Op } =  require('sequelize');
+const { Contract, ProcurementRequest, ProcurementBid, User, Dispute, Sequelize, ContractLog } = require('../../database/models');
+const { Op, where } =  require('sequelize');
+const { sendMail } = require('../services/mailService');
+const path = require('path');
+const { generateContractSignedEmailHtml } = require('../utils/templates/emailTemplates');
 
 const createContract = async (req, res) => {
   try {
@@ -144,7 +147,90 @@ const getContracts = async (req, res) => {
   }
 };
 
+const acceptContract = async (req, res) => {
+  try{
+    const contractId = req.params.id;
+    const sellerId = req.user.id;
+    const { seller_bank_account } = req.body;
+    //find contract
+    const contract  = await Contract.findByPk(contractId,{
+      include: [
+        {
+          model: ProcurementRequest,
+          as: 'procurementRequest',
+          include: [
+            {
+              model: User,
+              as: 'buyer',
+              attributes: ['id', 'first_name', 'last_name', 'company_name', "email"]
+            }
+          ]
+        },
+        {
+          model: ProcurementBid,
+          as: 'bid',
+          attributes: ['id', 'seller_id'],
+        }
+      ]
+    });
+    if(!contract) {
+      return res.status(404).json({ message: 'Contract not found' });
+    }
+    //check if sellers bank account is provided
+    if(!seller_bank_account)
+      return res.status(400).json({ message: 'Seller bank account is required' });
+    
+    //check if the contract status is valid not signed
+    if(contract.status !== 'issued' && contract.status !== 'edited') {
+      return res.status(400).json({ message: 'Contract is not in a state that can be accepted' });
+    }
+    //update contract status
+    contract.status = 'signed';
+    await contract.save();
+    //save seller bank account
+    await User.update({seller_bank_account: seller_bank_account}, {where: {id: sellerId}});
+
+    //send email to buyer
+    const htmlContent = generateContractSignedEmailHtml({
+    user: contract.procurementRequest.buyer,
+    requestTitle: contract.procurementRequest.title,
+    originalName: contract.original_name,
+    contractId: contract.id,
+    price: contract.price,
+    logoCid: 'logoImage'
+});
+
+await sendMail({
+    to: contract.procurementRequest.buyer.email,
+    subject: 'Contract accepted and signed',
+    text: `Dear ${contract.procurementRequest.buyer.first_name} ${contract.procurementRequest.buyer.last_name},\n\nThe contract for "${contract.procurementRequest.title}" has been accepted and signed by the seller.\n\nContract ID: ${contract.id}`,
+    html: htmlContent,
+    attachments: [
+        {
+            filename: 'logo.png',
+            path: path.join(__dirname, '../../public/logo/logo-no-background.png'),
+            cid: 'logoImage',
+            contentDisposition: 'inline',
+        }
+    ],
+});
+    //add log for contract
+      await ContractLog.create({
+        contract_id: contract.id,
+        action: 'Contract accepted and signed',
+        user_id: sellerId,
+      });
+      return res.status(200).json({message: 'Contract accepted and signed successfully'});
+  } catch (error) {
+    console.error('Error accepting contract:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+
+};
+
+
 module.exports = {
   createContract,
   getContracts,
+  acceptContract,
 };
