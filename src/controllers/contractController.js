@@ -4,6 +4,7 @@ const { Contract,
   User,
   Dispute,
   ProcurementCategory,
+  PaymentInstruction,
   Sequelize } = require('../../database/models');
 const { Op } = require('sequelize');
 
@@ -86,10 +87,10 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
         roleFilter.push({ '$bid.seller.email$': query.email });
       }
 
-    } else if (user.role === 'seller') { 
+    } else if (user.role === 'seller') {
       roleFilter.push({ '$bid.seller.id$': user.id });
 
-      if (query.email) { 
+      if (query.email) {
         roleFilter.push({ '$procurementRequest.buyer.email$': query.email });
       }
     }
@@ -145,14 +146,19 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
           }
         ]
       },
-      // brojanje disputes za contract
       {
         model: Dispute,
         as: 'disputes',
         attributes: [],
+      },
+      {
+        model: PaymentInstruction,  // uslovi za placanje
+        as: 'paymentInstructions',
+        attributes: ['id', 'payment_policy', 'date', 'amount']
       }
     ],
     attributes: {
+      // broj disputes za ugovor
       include: [
         [Sequelize.fn('COUNT', Sequelize.col('disputes.id')), 'number_of_disputes']
       ]
@@ -163,36 +169,46 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       'procurementRequest.buyer.id',
       'bid.id',
       'bid.seller.id',
-      'procurementRequest.procurementCategory.id'
+      'procurementRequest.procurementCategory.id',
+      'paymentInstructions.id'
     ]
   });
 
   // formiranje odgovora
   const response = await Promise.all(contracts.map(async contract => {
     // dobavljanje dokumenta za ugovor
-    const contractDocument = await contractDocumentService.getContractDocument(contract.id);
+    //const contractDocument = await contractDocumentService.getContractDocument(contract.id);
 
     return {
+      // contract details
       contract_id: contract.id,
       award_date: contract.created_at,
       price: contract.price,
       delivery_terms: contract.timeline,
       status: contract.status,
+      //contract_document_url: contractDocument?.file_url || null,
+      number_of_disputes: contract.dataValues.number_of_disputes,
+      // buyer details
       buyer_id: contract.procurementRequest.buyer.id,
       buyer_name: `${contract.procurementRequest.buyer.first_name} ${contract.procurementRequest.buyer.last_name}`,
       buyer_company_name: contract.procurementRequest.buyer?.company_name,
+      buyer_email: contract.procurementRequest.buyer.email,
+      // seller details
       seller_id: contract.bid.seller.id,
       seller_name: `${contract.bid.seller.first_name} ${contract.bid.seller.last_name}`,
       seller_company_name: contract.bid.seller?.company_name,
+      seller_email: contract.bid.seller.email,
+      // request details
       procurement_request_id: contract.procurement_request_id,
       procurement_request_title: contract.procurementRequest.title,
       procurement_bid_id: contract.bid_id,
-      number_of_disputes: contract.dataValues.number_of_disputes,
-      contract_document_url: contractDocument?.file_url || null,
-      // neobavezni
       procurement_category: contract.procurementRequest.procurementCategory?.name,
-      buyer_email: contract.procurementRequest.buyer.email,
-      seller_email: contract.bid.seller.email,
+      payment_instructions: contract.paymentInstructions.map(instr => ({
+        id: instr.id,
+        payment_policy: instr.payment_policy,
+        date: instr.date,
+        amount: instr.amount
+      })),
     };
   }));
 
