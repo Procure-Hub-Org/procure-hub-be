@@ -486,6 +486,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       delivery_terms: contract.timeline,
       status: contract.status,
       contract_document_url: contractDocument?.file_url || null,
+      contract_document_name: contractDocument?.original_name || null,
       number_of_disputes: contract.dataValues.number_of_disputes,
       // buyer details
       buyer_id: contract.procurementRequest.buyer.id,
