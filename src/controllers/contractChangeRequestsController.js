@@ -82,7 +82,7 @@ const postContractChangeRequest = async (req, res) => {
 
         const contractLog = await ContractLog.create({
             contract_id: contractId,
-            action: `Requested changes for contract ${message}`,
+            action: `Requested changes for contract \"${message}\"`,
             user_id: sellerId,
         });
 
