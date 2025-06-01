@@ -466,6 +466,13 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
     attributes: {
       // broj disputes za ugovor
       include: [
+        'id',
+        'procurement_request_id',
+        'bid_id',
+        'status',
+        'price',
+        'timeline',
+        'created_at',
         [Sequelize.fn('COUNT', Sequelize.col('disputes.id')), 'number_of_disputes']
       ],
     },
@@ -494,7 +501,7 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
       bid: contract.bid,
       // contract details
       contract_id: contract.id,
-      award_date: contract.created_at,
+      award_date: contract.dataValues.created_at,
       price: contract.price,
       delivery_terms: contract.timeline,
       status: contract.status,
@@ -545,6 +552,8 @@ const getContractById = async (req, res) => {
   try {
     const contractId = req.params.id;
     const contract = await fetchContracts({ user: req.user, query: {}, contractId });
+
+    console.log('Fetched contract:', contract);
 
     if (contract.length === 0) {
       return res.status(404).json({ message: 'Contract not found' });
