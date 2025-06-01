@@ -275,7 +275,7 @@ const updateContract = async (req, res) => {
         newStatus = 'issued';
       }
     } else if (contract.status === 'issued') {
-      newStatus = 'issued';
+      newStatus = 'edited';
     }
 
     contract.status = newStatus;
