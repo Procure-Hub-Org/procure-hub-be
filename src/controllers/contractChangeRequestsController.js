@@ -1,4 +1,7 @@
-const { ContractChangeRequest } = require('../../database/models/');
+const { ContractChangeRequest, Notification, ContractLog, ProcurementRequest, User, Contract } = require('../../database/models/');
+const { sendMail } = require('../services/mailService.js');
+const { generateChangeRequestEmailHtml } = require('../utils/templates/emailTemplates');
+
 
 const getContractChangeRequests = async (req, res) => {
     try {
@@ -21,6 +24,85 @@ const getContractChangeRequests = async (req, res) => {
     }
 }
 
+const postContractChangeRequest = async (req, res) => {
+    try {
+        const contractId = req.params.contractId;
+        console.log("Contract ID: ", contractId);
+        const { sellerId, message } = req.body;
+        console.log("Seller ID: ", sellerId);
+        console.log("Message: ", message);
+        if (!contractId || !sellerId || !message) {
+            return res.status(400).json({ message: 'Contract ID, seller ID, and message are required.' });
+        }
+
+        if(req.user.role !== 'seller') {
+            return res.status(403).json({ message: 'Only sellers can post change requests.'});
+        }
+
+        const newChangeRequest = await ContractChangeRequest.create({
+            contract_id: contractId,
+            seller_id: sellerId,
+            message: message,
+        });
+
+        const contract = await Contract.findOne({
+            include: [{
+                model: ProcurementRequest, 
+                as: 'procurementRequest',
+                attributes: ['buyer_id']
+            }],
+            where: { id: contractId },
+            attributes: []
+        });
+        
+        const buyerId = contract?.procurementRequest?.buyer_id;
+
+
+        const buyer = await User.findByPk(buyerId);
+
+        const seller = await User.findByPk(sellerId);
+
+        const newNotification = await Notification.create({
+            contract_id: contractId,
+            user_id: buyerId,
+            text: `New change request from seller ${sellerId} for contract ${contractId}: ${message}`,
+        });
+
+        const contractLog = await ContractLog.create({
+            contract_id: contractId,
+            action: `Requested changes for contract ${message}`,
+            user_id: sellerId,
+        });
+
+        const htmlContent = generateChangeRequestEmailHtml({
+            buyer: buyer,
+            seller: seller,
+            contractId: contractId,
+            message: message,
+        })
+
+        await sendMail({
+            to: buyer.email,
+            subject: `New Change Request for Contract ${contractId}`,
+            text: `Respected ${buyer.first_name} ${buyer.last_name}, \nA new change request has been made by seller ${seller.first_name} ${seller.last_name} for contract ${contractId}. \nMessage: ${message}`,
+            html: htmlContent,
+            logoCid: 'logoImage'
+        });
+
+        res.status(201).json({
+            message: 'Change request created succesfully.',
+            changeRequest: newChangeRequest,
+            notification: newNotification,
+            contractLog: contractLog
+        });
+
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message});
+    }
+}
+
 module.exports = {
-    getContractChangeRequests
+    getContractChangeRequests,
+    postContractChangeRequest
 };
