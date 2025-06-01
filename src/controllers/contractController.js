@@ -588,8 +588,8 @@ const acceptContract = async (req, res) => {
       return res.status(404).json({ message: 'Contract not found' });
     }
     //check if sellers bank account is provided
-    if(!seller_bank_account)
-      return res.status(400).json({ message: 'Seller bank account is required' });
+    /*if(!seller_bank_account)
+      return res.status(400).json({ message: 'Seller bank account is required' });*/
     
     //check if the contract status is valid not signed
     if(contract.status !== 'issued' && contract.status !== 'edited') {
@@ -599,39 +599,59 @@ const acceptContract = async (req, res) => {
     contract.status = 'signed';
     await contract.save();
     //save seller bank account
-    await User.update({seller_bank_account: seller_bank_account}, {where: {id: sellerId}});
+    if (seller_bank_account){
+      await User.update({seller_bank_account: seller_bank_account}, {where: {id: sellerId}});
+    }
 
     //send email to buyer
     const htmlContent = generateContractSignedEmailHtml({
-    user: contract.procurementRequest.buyer,
-    requestTitle: contract.procurementRequest.title,
-    originalName: contract.original_name,
-    contractId: contract.id,
-    price: contract.price,
-    logoCid: 'logoImage'
-});
+        user: contract.procurementRequest.buyer,
+        requestTitle: contract.procurementRequest.title,
+        originalName: contract.original_name,
+        contractId: contract.id,
+        price: contract.price,
+        logoCid: 'logoImage'
+    });
 
-await sendMail({
-    to: contract.procurementRequest.buyer.email,
-    subject: 'Contract accepted and signed',
-    text: `Dear ${contract.procurementRequest.buyer.first_name} ${contract.procurementRequest.buyer.last_name},\n\nThe contract for "${contract.procurementRequest.title}" has been accepted and signed by the seller.\n\nContract ID: ${contract.id}`,
-    html: htmlContent,
-    attachments: [
-        {
-            filename: 'logo.png',
-            path: path.join(__dirname, '../../public/logo/logo-no-background.png'),
-            cid: 'logoImage',
-            contentDisposition: 'inline',
-        }
-    ],
-});
+    await sendMail({
+        to: contract.procurementRequest.buyer.email,
+        subject: 'Contract accepted and signed',
+        text: `Dear ${contract.procurementRequest.buyer.first_name} ${contract.procurementRequest.buyer.last_name},\n\nThe contract for "${contract.procurementRequest.title}" has been accepted and signed by the seller.\n\nContract ID: ${contract.id}`,
+        html: htmlContent,
+        attachments: [
+            {
+                filename: 'logo.png',
+                path: path.join(__dirname, '../../public/logo/logo-no-background.png'),
+                cid: 'logoImage',
+                contentDisposition: 'inline',
+            }
+        ],
+    });
     //add log for contract
-      await ContractLog.create({
-        contract_id: contract.id,
-        action: 'Contract accepted and signed',
-        user_id: sellerId,
-      });
-      return res.status(200).json({message: 'Contract accepted and signed successfully'});
+    await ContractLog.create({
+      contract_id: contract.id,
+      action: 'Contract accepted and signed',
+      user_id: sellerId,
+    });
+
+    //create notification for buyer
+    await Notification.create({
+      contract_id: contract.id,
+      user_id: contract.procurementRequest.buyer.id,
+      text: `Contract has been accepted.`,
+    });
+
+    //create notification for admins
+      const admins = await User.findAll({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await Notification.create({
+          contract_id: contract.id,
+          user_id: admin.id,
+          text: `Contract has been accepted.`,
+        });
+      }
+
+    return res.status(200).json({message: 'Contract accepted and signed successfully'});
   } catch (error) {
     console.error('Error accepting contract:', error);
     return res.status(500).json({ message: 'Internal server error' });
