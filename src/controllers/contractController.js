@@ -616,7 +616,8 @@ const acceptContract = async (req, res) => {
     const htmlContent = generateContractSignedEmailHtml({
         user: contract.procurementRequest.buyer,
         requestTitle: contract.procurementRequest.title,
-        originalName: contract.original_name,
+        deliveryTime: contract.timeline,
+        sellerBankAccount: seller_bank_account || "Not provided",
         contractId: contract.id,
         price: contract.price,
         logoCid: 'logoImage'

@@ -118,7 +118,7 @@ const generateContractIssuedEmailHtml = ({ seller, buyer, requestTitle, price, t
   `;
 };
 
-const generateContractSignedEmailHtml = ({ user, requestTitle,originalName, price,contractId, logoCid }) => {
+const generateContractSignedEmailHtml = ({ user, requestTitle, deliveryTime, sellerBankAccount, price, contractId, logoCid }) => {
     return `
         <!DOCTYPE html>
         <html>
@@ -142,14 +142,16 @@ const generateContractSignedEmailHtml = ({ user, requestTitle,originalName, pric
                         <table width="100%" cellpadding="10" cellspacing="0" style="margin-top: 20px; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background-color: #eee; color: #124662;">
-                                    <th>Original name</th>
+                                    <th>Delivery time</th>
                                     <th>Price</th>
+                                    <th>Seller Bank Account</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>${originalName}</td>
-                                    <td>${price}</td>
+                                    <td>${deliveryTime}</td>
+                                    <td>${price}$</td>
+                                    <td>${sellerBankAccount}</td>
                                 </tr>
                             </tbody>
                         </table>
