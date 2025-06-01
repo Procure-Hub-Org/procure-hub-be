@@ -50,7 +50,7 @@ const postContractChangeRequest = async (req, res) => {
             include: [{
                 model: ProcurementRequest, 
                 as: 'procurementRequest',
-                attributes: ['buyer_id']
+                attributes: ['buyer_id', 'title']
             }],
             where: { id: contractId },
             attributes: []
@@ -66,7 +66,7 @@ const postContractChangeRequest = async (req, res) => {
         const newNotification = await Notification.create({
             contract_id: contractId,
             user_id: buyerId,
-            text: `New change request from seller ${sellerId} for contract ${contractId}: ${message}`,
+            text: `New change request from seller ${seller.first_name} ${seller.last_name} for contract related to procurement request \"${contract.procurementRequest.title}\": ${message}`,
         });
 
         const admins = await User.findAll({
@@ -76,7 +76,7 @@ const postContractChangeRequest = async (req, res) => {
             await Notification.create({
                 contract_id: contractId,
                 user_id: admin.id,
-                text: `New change request from seller ${sellerId} for contract ${contractId}: ${message}`
+                text: `New change request from seller ${seller.first_name} ${seller.last_name} for contract related to procurement request \"${contract.procurementRequest.title}\": ${message}`,
             })
         }
 
@@ -90,14 +90,15 @@ const postContractChangeRequest = async (req, res) => {
             buyer: buyer,
             seller: seller,
             contractId: contractId,
+            procurementRequestTitle: contract.procurementRequest.title,
             message: message,
             logoCid: 'logoImage'
         })
 
         await sendMail({
             to: buyer.email,
-            subject: `New Change Request for Contract ${contractId}`,
-            text: `Respected ${buyer.first_name} ${buyer.last_name}, \nA new change request has been made by seller ${seller.first_name} ${seller.last_name} for contract ${contractId}. \nMessage: ${message}`,
+            subject: `New Change Request for Contract related to procurement request \"${contract.procurementRequest.title}\"`,
+            text: `Respected ${buyer.first_name} ${buyer.last_name}, \nA new change request has been made by seller ${seller.first_name} ${seller.last_name} for contract related to procurement request \"${contract.procurementRequest.title}\". \nMessage: ${message}`,
             html: htmlContent,
             attachments: [
                             {

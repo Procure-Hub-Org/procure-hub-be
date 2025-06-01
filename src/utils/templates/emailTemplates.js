@@ -159,7 +159,7 @@ const generateContractSignedEmailHtml = ({ user, requestTitle,originalName, pric
                         </p>
 
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="${process.env.FRONTEND_URL}/contracts/${contractId}" 
+                            <a href="${process.env.FRONTEND_URL}/contract-dashboard" 
                             style="background-color: #5cb85c; color: white; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold;">
                                 View Contract
                             </a>
@@ -173,7 +173,7 @@ const generateContractSignedEmailHtml = ({ user, requestTitle,originalName, pric
 };
 
 
-const generateChangeRequestEmailHtml = ({ buyer, seller, contractId, message, logoCid }) => {
+const generateChangeRequestEmailHtml = ({ buyer, seller, contractId, procurementRequestTitle, message, logoCid }) => {
     return `
         <!DOCTYPE html>
         <html>
@@ -191,20 +191,20 @@ const generateChangeRequestEmailHtml = ({ buyer, seller, contractId, message, lo
                             Respected <strong>${buyer.first_name} ${buyer.last_name}</strong>,
                         </p>
                         <p>
-                            A new change request has been submitted by seller <strong>${seller.first_name} ${seller.last_name}</strong> for contract ID <strong>${contractId}</strong>.
+                            A new change request has been submitted by seller <strong>${seller.first_name} ${seller.last_name}</strong> for contract related to procurement request \"${procurementRequestTitle}\"</strong>.
                         </p>
 
                         <table width="100%" cellpadding="10" cellspacing="0" style="margin-top: 20px; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background-color: #eee; color: #124662;">
                                     <th>Seller</th>
-                                    <th>Contract ID</th>
+                                    <th>Procurement request</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td>${seller.first_name} ${seller.last_name}</td>
-                                    <td>${contractId}</td>
+                                    <td>${procurementRequestTitle}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -213,6 +213,17 @@ const generateChangeRequestEmailHtml = ({ buyer, seller, contractId, message, lo
                             <strong>Change Request Message:</strong><br />
                             <em>${message}</em>
                         </p>
+
+                        <p style="margin-top: 20px;">
+                            You can view the contract and further details by logging into your dashboard.
+                        </p>
+
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${process.env.FRONTEND_URL}/contract-dashboard" 
+                            style="background-color: #d9534f; color: white; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold;">
+                                View Contract
+                            </a>
+                        </div>
                     </td>
                 </tr>
             </table>
