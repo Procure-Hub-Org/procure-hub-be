@@ -29,6 +29,7 @@ const contractDocumentRoutes = require('./src/routes/contractDocumentRoutes.js')
 const disputeRoutes = require('./src/routes/disputeRoutes.js');
 const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const contractChangeRequestRoute = require('./src/routes/contractChangeRequestRoute.js');
 
 
 const app = express();
@@ -73,6 +74,7 @@ app.use('/api', contractDocumentRoutes);
 app.use('/api', disputeRoutes);
 app.use('/api', sellerReportRoute);
 app.use('/api', notificationRoutes);
+app.use('/api', contractChangeRequestRoute);
 
 
 server.listen(serverConfig.port, () => {

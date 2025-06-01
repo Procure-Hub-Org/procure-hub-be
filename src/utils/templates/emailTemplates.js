@@ -173,8 +173,58 @@ const generateContractSignedEmailHtml = ({ user, requestTitle,originalName, pric
 };
 
 
+const generateChangeRequestEmailHtml = ({ buyer, seller, contractId, message, logoCid }) => {
+    return `
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                <tr>
+                    <td style="padding: 20px; text-align: center; background-color: #fff;">
+                        <img src="cid:${logoCid}" alt="ProcureHub logo" style="height: 50px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 20px;">
+                        <h2 style="margin: 0; color: #124662;">ProcureHub</h2>
+                        <p style="margin-top: 20px;">
+                            Respected <strong>${buyer.first_name} ${buyer.last_name}</strong>,
+                        </p>
+                        <p>
+                            A new change request has been submitted by seller <strong>${seller.first_name} ${seller.last_name}</strong> for contract ID <strong>${contractId}</strong>.
+                        </p>
+
+                        <table width="100%" cellpadding="10" cellspacing="0" style="margin-top: 20px; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="background-color: #eee; color: #124662;">
+                                    <th>Seller</th>
+                                    <th>Contract ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${seller.first_name} ${seller.last_name}</td>
+                                    <td>${contractId}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p style="margin-top: 20px;">
+                            <strong>Change Request Message:</strong><br />
+                            <em>${message}</em>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    `;
+};
+
+
 module.exports = {
     generateOutbidEmailHtml,
     generateContractIssuedEmailHtml,
-    generateContractSignedEmailHtml,    
+    generateContractSignedEmailHtml, 
+    generateChangeRequestEmailHtml
 };
