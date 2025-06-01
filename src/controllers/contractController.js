@@ -264,8 +264,22 @@ const updateContract = async (req, res) => {
       return res.status(404).json({ message: 'Bid not found' });
     }
 
-    // Ažuriraj osnovne podatke
-    contract.status = status;
+    let newStatus = contract.status;
+
+    if (contract.status === 'draft') {
+      if (status === 'issued') {
+        newStatus = 'issued';
+      }
+    } else if (contract.status === 'edited') {
+      if (status === 'issued') {
+        newStatus = 'issued';
+      }
+    } else if (contract.status === 'issued') {
+      newStatus = 'issued';
+    }
+
+    contract.status = newStatus;
+
     contract.price = price || contract.price;
     contract.timeline = timeline || contract.timeline;
     await contract.save();
@@ -400,27 +414,29 @@ const fetchContracts = async ({ user, query, contractId = null }) => {
   // Formiranje filtera
   const filter = {};
 
-  // filtrira rezultate prema rolama buyer/seller
+  // filtrira rezultate prema rolama buyer/seller/admin
   if (!isAdmin && contractId === null) {
     const roleFilter = [];
 
-    // filtrira ugovore zavisno od role usera buyer ili seller
-    // email query za buyer usera filtrira prema email sellera
-    // email query za seller usera filtrira prema email buyera
     if (user.role === 'buyer') {
       roleFilter.push({ '$procurementRequest.buyer.id$': user.id });
       if (query.email) {
         roleFilter.push({ '$bid.seller.email$': query.email });
       }
-
     } else if (user.role === 'seller') {
       roleFilter.push({ '$bid.seller.id$': user.id });
       if (query.email) {
         roleFilter.push({ '$procurementRequest.buyer.email$': query.email });
       }
+      roleFilter.push({ status: { [Op.ne]: 'draft' } });
     }
+
     filter[Op.and] = roleFilter;
+  } else if (isAdmin && contractId === null) {
+    // Admin ne vidi draft
+    filter.status = { [Op.ne]: 'draft' };
   }
+
   // filtrira po contract id
   if (contractId) { filter['id'] = contractId; }
 
