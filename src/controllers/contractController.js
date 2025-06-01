@@ -16,6 +16,7 @@ const path = require('path');
 const { sendMail } = require('../services/mailService'); 
 const { generateContractIssuedEmailHtml } = require('../utils/templates/emailTemplates');
 const { generateContractSignedEmailHtml } = require('../utils/templates/emailTemplates');
+const { generateContractEditedEmailHtml } = require('../utils/templates/emailTemplates');
 
 const contractDocumentService = require('../services/contractDocumentService');
 
@@ -234,17 +235,15 @@ const updateContract = async (req, res) => {
     const { status, price, timeline, payment_instructions } = req.body;
     const contractId = req.params.id;
 
-    const contract_previous_status = await Contract.findByPk(contractId, {
-      attributes: ['status'],
-    });
-
-    if (!status || !['issued', 'draft', 'edited'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid contract status. Must be "issued", "edited" or "draft".' });
-    }
-
     const contract = await Contract.findByPk(contractId);
     if (!contract) {
       return res.status(404).json({ message: 'Contract not found' });
+    }
+
+    const previousStatus = contract.status;
+
+    if (!status || !['issued', 'draft', 'edited'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid contract status. Must be "issued", "edited" or "draft".' });
     }
 
     if (contract.status !== 'draft' && contract.status !== 'edited' && contract.status !== 'issued') {
@@ -289,34 +288,28 @@ const updateContract = async (req, res) => {
     // Loguj akciju
     await ContractLog.create({
       contract_id: contract.id,
-      action: 'Contract updated (status: edited)',
+      action: `Contract updated (status: ${status})`,
       user_id: req.user.id,
     });
 
-    // Ažuriraj status zahtjeva ako je ugovor izdan
+    // Ažuriraj status zahtjeva
     if (status === 'issued' || status === 'edited') {
       procurementRequest.status = 'awarded';
       await procurementRequest.save();
+    }
 
-      const seller = await User.findByPk(bid.seller_id);
+    const seller = await User.findByPk(bid.seller_id);
 
-      if (seller) {
-        // Kreiraj notifikaciju za seller-a
-        await Notification.create({
-          contract_id: contract.id,
-          user_id: seller.id,
-          text: `Contract has been issued for your bid.`,
-        });
+    if (seller && previousStatus && status) {
+      const buyer = await User.findByPk(procurementRequest.buyer_id);
+      const paymentInstructions = await PaymentInstruction.findAll({ where: { contract_id: contract.id } });
+      const schedule = paymentInstructions.map(instr => ({
+        date: instr.date.toISOString().split('T')[0],
+        amount: instr.amount,
+      }));
+      const policy = paymentInstructions.length > 0 ? paymentInstructions[0].payment_policy : 'N/A';
 
-        // Pripremi podatke za email
-        const buyer = await User.findByPk(procurementRequest.buyer_id);
-        const paymentInstructions = await PaymentInstruction.findAll({ where: { contract_id: contract.id } });
-        const schedule = paymentInstructions.map(instr => ({
-          date: instr.date.toISOString().split('T')[0],
-          amount: instr.amount,
-        }));
-        const policy = paymentInstructions.length > 0 ? paymentInstructions[0].payment_policy : 'N/A';
-
+      if (previousStatus === 'draft' && status === 'issued') {
         const html = generateContractIssuedEmailHtml({
           seller,
           buyer,
@@ -330,9 +323,36 @@ const updateContract = async (req, res) => {
 
         await sendMail({
           to: seller.email,
-          subject: 'Contract Issued for Your Bid',
+          subject: 'New Contract Issued',
           html,
-          text: `Dear ${seller.first_name}, a contract has been issued for your bid.`,
+          text: `Dear ${seller.first_name}, a new contract has been issued for your bid.`,
+          attachments: [
+            {
+              filename: 'logo.png',
+              path: path.join(__dirname, '../../public/logo/logo-no-background.png'),
+              cid: 'logoImage',
+              contentDisposition: 'inline',
+            },
+          ],
+        });
+
+      } else if ((previousStatus === 'issued' || previousStatus === 'edited') && status === 'edited') {
+        const html = generateContractEditedEmailHtml({
+          seller,
+          buyer,
+          requestTitle: procurementRequest.title || 'N/A',
+          price: contract.price,
+          timeline: contract.timeline,
+          policy,
+          schedule,
+          logoCid: 'logoImage',
+        });
+
+        await sendMail({
+          to: seller.email,
+          subject: 'Contract Edited Notification',
+          html,
+          text: `Dear ${seller.first_name}, a contract has been edited by the buyer.`,
           attachments: [
             {
               filename: 'logo.png',
@@ -343,8 +363,10 @@ const updateContract = async (req, res) => {
           ],
         });
       }
+    }
 
-      // Notifikacije za admine
+    // Notifikacije za admine 
+    if (status === 'issued') {
       const admins = await User.findAll({ where: { role: 'admin' } });
       for (const admin of admins) {
         await Notification.create({
