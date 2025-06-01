@@ -25,9 +25,12 @@ const auctionDashboardRoutes = require('./src/routes/auctionDashboardRoutes.js')
 const buyerAnalytics = require('./src/routes/buyerAnalyticsRoute.js');
 const sellerAnalytics = require('./src/routes/sellerAnalyticsRoute.js');
 const contractRoutes = require('./src/routes/contractRoutes.js');
+const contractDocumentRoutes = require('./src/routes/contractDocumentRoutes.js');
 const disputeRoutes = require('./src/routes/disputeRoutes.js');
 const sellerReportRoute = require('./src/routes/sellerReportRoute.js');
-const contractChangeRequestRoutes = require('./src/routes/contractChangeRequestRoute.js');
+const notificationRoutes = require('./src/routes/notificationRoutes');
+const contractChangeRequestRoute = require('./src/routes/contractChangeRequestRoute.js');
+
 
 const app = express();
 
@@ -67,9 +70,12 @@ app.use('/api', buyerAnalytics);
 app.use('/api', sellerAnalytics);
 app.use('/api', auctionHistoryRoutes)
 app.use('/api', contractRoutes);
+app.use('/api', contractDocumentRoutes);
 app.use('/api', disputeRoutes);
 app.use('/api', sellerReportRoute);
-app.use('/api', contractChangeRequestRoutes);
+app.use('/api', notificationRoutes);
+app.use('/api', contractChangeRequestRoute);
+
 
 server.listen(serverConfig.port, () => {
     console.log(`Server is running on port ${serverConfig.port}`);
@@ -104,7 +110,12 @@ server.listen(serverConfig.port, () => {
     - DELETE /bid-documents/:id/remove - Remove bid document (sellers only)
     - GET /procurement-bid/:id/bid-documents - Get bid documents for a specific procurement request
     - GET /api/bids/user/:userId - Fetch all seller's bids
-    - GET /api/auction/:id/history - Fetch auction history`);
+    - GET /api/auction/:id/history - Fetch auction history
+    - GET /api/notifications/:userId - Get user notifications
+    - POST /api/contracts/:id/add-documents - Upload contract document (buyers only)
+    - DELETE /api/contracts/:id/remove-document - Remove contract document (buyers only)
+    - GET /api/contracts/:id/documents - Get contract documents (buyers only)`);
+
 });
 
 

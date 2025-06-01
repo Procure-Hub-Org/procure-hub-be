@@ -1,6 +1,6 @@
-const { ContractChangeRequest, Notification, ContractLog, ProcurementRequest, User, Contract } = require('../../database/models/');
+const { ContractChangeRequest, Notification, ContractLog, ProcurementRequest, User, Contract } = require('../../database/models/index.js');
 const { sendMail } = require('../services/mailService.js');
-const { generateChangeRequestEmailHtml } = require('../utils/templates/emailTemplates');
+const { generateChangeRequestEmailHtml } = require('../utils/templates/emailTemplates.js');
 
 const path = require('path');
 
