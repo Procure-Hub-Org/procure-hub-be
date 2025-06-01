@@ -93,13 +93,6 @@ const generateChangeRequestEmailHtml = ({ buyer, seller, contractId, message, lo
                             <strong>Change Request Message:</strong><br />
                             <em>${message}</em>
                         </p>
-
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="${process.env.FRONTEND_URL}/contract/${contractId}" 
-                            style="background-color: #124662; color: white; text-decoration: none; padding: 12px 24px; border-radius: 5px; font-weight: bold;">
-                            View Contract Details
-                            </a>
-                        </div>
                     </td>
                 </tr>
             </table>

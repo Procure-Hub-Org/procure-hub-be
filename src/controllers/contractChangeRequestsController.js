@@ -2,6 +2,7 @@ const { ContractChangeRequest, Notification, ContractLog, ProcurementRequest, Us
 const { sendMail } = require('../services/mailService.js');
 const { generateChangeRequestEmailHtml } = require('../utils/templates/emailTemplates');
 
+const path = require('path');
 
 const getContractChangeRequests = async (req, res) => {
     try {
@@ -54,7 +55,7 @@ const postContractChangeRequest = async (req, res) => {
             where: { id: contractId },
             attributes: []
         });
-        
+
         const buyerId = contract?.procurementRequest?.buyer_id;
 
 
@@ -79,6 +80,7 @@ const postContractChangeRequest = async (req, res) => {
             seller: seller,
             contractId: contractId,
             message: message,
+            logoCid: 'logoImage'
         })
 
         await sendMail({
@@ -86,7 +88,14 @@ const postContractChangeRequest = async (req, res) => {
             subject: `New Change Request for Contract ${contractId}`,
             text: `Respected ${buyer.first_name} ${buyer.last_name}, \nA new change request has been made by seller ${seller.first_name} ${seller.last_name} for contract ${contractId}. \nMessage: ${message}`,
             html: htmlContent,
-            logoCid: 'logoImage'
+            attachments: [
+                            {
+                                filename: 'logo.png',
+                                path: path.join(__dirname, '../../public/logo/logo-no-background.png'), 
+                                cid: 'logoImage', 
+                                contentDisposition: 'inline', 
+                            }
+                        ],
         });
 
         res.status(201).json({
