@@ -69,6 +69,17 @@ const postContractChangeRequest = async (req, res) => {
             text: `New change request from seller ${sellerId} for contract ${contractId}: ${message}`,
         });
 
+        const admins = await User.findAll({
+            where: { role: 'admin'}
+        });
+        for (const admin of admins) {
+            await Notification.create({
+                contract_id: contractId,
+                user_id: admin.id,
+                text: `New change request from seller ${sellerId} for contract ${contractId}: ${message}`
+            })
+        }
+
         const contractLog = await ContractLog.create({
             contract_id: contractId,
             action: `Requested changes for contract ${message}`,
@@ -101,7 +112,11 @@ const postContractChangeRequest = async (req, res) => {
         res.status(201).json({
             message: 'Change request created succesfully.',
             changeRequest: newChangeRequest,
-            notification: newNotification,
+            buyer_notification: newNotification,
+            admin_notifications: admins.map(admin => ({
+                user_id: admin.id,
+                text: `New change request from seller ${sellerId} for contract ${contractId}: ${message}`
+            })),
             contractLog: contractLog
         });
 
