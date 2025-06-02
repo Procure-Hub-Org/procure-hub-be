@@ -7,7 +7,7 @@ exports.getNotificationsByUserId = async (req, res) => {
     const role = user?.role;
 
     const notifications = await Notification.findAll({
-      where: role === 'admin' ? {} : { user_id: userId },
+      where: { user_id: userId },
       attributes: ['id', 'contract_id', 'text', 'created_at'],
       include: [
         {
