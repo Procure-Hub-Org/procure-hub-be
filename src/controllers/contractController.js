@@ -350,6 +350,27 @@ const updateContract = async (req, res) => {
           ],
         });
 
+        // Notifikacije za admine 
+        if (status === 'issued') {
+          const admins = await User.findAll({ where: { role: 'admin' } });
+          for (const admin of admins) {
+            await Notification.create({
+              contract_id: contract.id,
+              user_id: admin.id,
+              text: `New contract has been issued.`,
+            });
+          }
+        }
+
+        //Notifikacija za sellera
+        if (status === 'issued') {
+          await Notification.create({
+              contract_id: contract.id,
+              user_id: seller.id,
+              text: `New contract has been issued.`,
+          });
+        }
+
       } else if ((previousStatus === 'issued' || previousStatus === 'edited') && status === 'edited') {
         const html = generateContractEditedEmailHtml({
           seller,
@@ -376,18 +397,27 @@ const updateContract = async (req, res) => {
             },
           ],
         });
-      }
-    }
 
-    // Notifikacije za admine 
-    if (status === 'issued') {
-      const admins = await User.findAll({ where: { role: 'admin' } });
-      for (const admin of admins) {
-        await Notification.create({
-          contract_id: contract.id,
-          user_id: admin.id,
-          text: `New contract has been issued.`,
-        });
+        // Notifikacije za admine 
+        if (status === 'edited') {
+          const admins = await User.findAll({ where: { role: 'admin' } });
+          for (const admin of admins) {
+            await Notification.create({
+              contract_id: contract.id,
+              user_id: admin.id,
+              text: `Contract has been edited.`,
+            });
+          }
+        }
+
+        //Notifikacija za sellera
+        if (status === 'edited') {
+          await Notification.create({
+              contract_id: contract.id,
+              user_id: seller.id,
+              text: `Contract has been edited.`,
+          });
+        }
       }
     }
 
