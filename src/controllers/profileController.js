@@ -1,8 +1,10 @@
 const userService = require("../services/userService");
 const buyerTypeController = require("./buyerTypeController");
-const supabaseBucketService = require("../services/supabaseBucketService");
+const getUploadService = require("../factories/uploadFactory");
+// const supabaseBucketService = require("../services/supabaseBucketService");
 const path = require("path");
 const crypto = require("crypto");
+const uploadService = getUploadService();
 
 const updateProfile = async (req, res) => {
   if (req.fileValidationError) {
@@ -17,13 +19,13 @@ const updateProfile = async (req, res) => {
       const extension = path.extname(req.files.profile_picture[0].originalname);
       const uniqueName = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
       const destinationPath = `photos/user_${userId}_profile_picture_${uniqueName}${extension}`;
-      const result = await supabaseBucketService.uploadFile(req.files.profile_picture[0].buffer, req.files.profile_picture[0].mimetype, destinationPath);
+      const result = await uploadService.uploadFile(req.files.profile_picture[0].buffer, req.files.profile_picture[0].mimetype, destinationPath);
       if (!result) {
         console.error("Failed to upload file to Supabase");
       } else {
         if (req.user.profile_picture) {
           const oldProfilePicturePath = req.user.profile_picture;
-          const deleteResult = await supabaseBucketService.deleteFile(oldProfilePicturePath);
+          const deleteResult = await uploadService.deleteFile(oldProfilePicturePath);
           if (!deleteResult) {
             console.error("Failed to delete old profile picture from Supabase");
           }
@@ -36,14 +38,14 @@ const updateProfile = async (req, res) => {
       const extension = path.extname(req.files.company_logo[0].originalname);
       const uniqueName = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
       const destinationPath = `photos/user_${userId}_company_logo_${uniqueName}${extension}`;
-      const result = await supabaseBucketService.uploadFile(req.files.company_logo[0].buffer, req.files.company_logo[0].mimetype, destinationPath);
+      const result = await uploadService.uploadFile(req.files.company_logo[0].buffer, req.files.company_logo[0].mimetype, destinationPath);
       if (!result) {
         console.error("Failed to upload file to Supabase");
         updateInfo.company_logo = "";
       } else {
         if (req.user.company_logo) {
           const oldCompanyLogoPath = req.user.company_logo;
-          const deleteResult = await supabaseBucketService.deleteFile(oldCompanyLogoPath);
+          const deleteResult = await uploadService.deleteFile(oldCompanyLogoPath);
           if (!deleteResult) {
             console.error("Failed to delete old profile picture from Supabase");
           }
@@ -84,12 +86,12 @@ const getProfile = async (req, res) => {
       : null;
 
     if (safeUser.profile_picture) {
-      const signedUrl = await supabaseBucketService.getSignedUrl(safeUser.profile_picture);
+      const signedUrl = await uploadService.getFileUrl(safeUser.profile_picture);
       safeUser.profile_picture_url = signedUrl;
     }
 
     if (safeUser.company_logo) {
-      const signedUrl = await supabaseBucketService.getSignedUrl(safeUser.company_logo);
+      const signedUrl = await uploadService.getFileUrl(safeUser.company_logo);
       safeUser.company_logo_url = signedUrl;
     }
 

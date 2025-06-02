@@ -1,5 +1,7 @@
 const contractDocumentRepository = require('../repositories/contractDocumentRepository');
-const supabaseBucketService = require('../services/supabaseBucketService');
+const getUploadService = require('../factories/uploadFactory');
+const uploadService = getUploadService();
+// const supabaseBucketService = require('../services/supabaseBucketService');
 
 exports.getContractDocument = async (contractId) => {
     const contractDocument = await contractDocumentRepository.getContractDocument(contractId);
@@ -7,7 +9,7 @@ exports.getContractDocument = async (contractId) => {
         return null;
     }
 
-    const fileUrl = await supabaseBucketService.getSignedUrl(contractDocument.contract_path);
+    const fileUrl = await uploadService.getFileUrl(contractDocument.contract_path);
     const jsonContractDocument = contractDocument.toJSON();
     jsonContractDocument.file_url = fileUrl;
 
