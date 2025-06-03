@@ -1,9 +1,12 @@
 const path = require('path');
 const crypto = require('crypto');
 
-const supabaseBucketService = require("../services/supabaseBucketService");
+const getUploadService = require('../factories/uploadFactory');
+// const supabaseBucketService = require("../services/supabaseBucketService");
 const bidDocumentRepository = require("../repositories/bidDocumentRepository");
 const bidDocumentService = require("../services/bidDocumentService");
+
+const uploadService = getUploadService();
 
 exports.uploadBidDocument = async (req, res) => {
     if (req.fileValidationError) {
@@ -22,7 +25,7 @@ exports.uploadBidDocument = async (req, res) => {
     const uniqueName = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
     const destinationPath = `documents/user_${userId}_bid_${procurementBidId}_${uniqueName}${extension}`;
 
-    const result = await supabaseBucketService.uploadFile(file.buffer, file.mimetype, destinationPath);
+    const result = await uploadService.uploadFile(file.buffer, file.mimetype, destinationPath);
     if (!result) {
         return res.status(500).json({ message: "Failed to upload file" });
     }
@@ -54,7 +57,7 @@ exports.deleteBidDocument = async (req, res) => {
         return res.status(500).json({ message: "Failed to delete document information" });
     }
 
-    const deleted = await supabaseBucketService.deleteFile(filePath);
+    const deleted = await uploadService.deleteFile(filePath);
 
     return res.status(200).json({ message: "File deleted successfully" });
 }
