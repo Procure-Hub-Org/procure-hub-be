@@ -51,7 +51,7 @@ class LocalUploadService extends uploadService {
     }
 
     async getFileUrl(filePath, expiresIn = 86400) {
-        return `${getBaseUrl()}/uploads/${filePath.replace(/\\/g, '/')}`;
+        return `${getBaseUrl()}/uploads/${filePath}`;
     }
 }
 
