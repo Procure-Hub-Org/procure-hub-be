@@ -259,7 +259,7 @@ const getRegressionData = async (req, res) => {
       { key: 'auction_duration', name: 'Auction Duration' },
       { key: 'last_call_duration', name: 'Last Call Duration' },
       { key: 'num_bidders', name: 'Number of Bidders' },
-      { key: 'time_until_first_bid', name: 'Time Until Last Bid' },
+      { key: 'time_until_first_bid', name: 'Time Until First Bid' },
       { key: 'num_total_bids', name: 'Total Number of Bids' },
       { key: 'evaluation_weight_entropy', name: 'Evaluation Weight Entropy' },
       { key: 'has_must_have_criteria', name: 'Has Must-Have Criteria' },
