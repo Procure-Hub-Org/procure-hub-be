@@ -1,9 +1,12 @@
 const path = require('path');
 const crypto = require('crypto');
 
-const supabaseBucketService = require("../services/supabaseBucketService");
+const getUploadService = require("../factories/uploadFactory");
+// const supabaseBucketService = require("../services/supabaseBucketService");
 const contractDocumentRepository = require("../repositories/contractDocumentRepository");
 const contractDocumentService = require("../services/contractDocumentService");
+
+const uploadService = getUploadService();
 
 exports.uploadContractDocument = async (req, res) => {
     if(req.fileValidationError) {
@@ -22,7 +25,7 @@ exports.uploadContractDocument = async (req, res) => {
     const uniqueName = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
     const destinationPath = `documents/contract_${contractId}_${uniqueName}${extension}`;
 
-    const result = await supabaseBucketService.uploadFile(file.buffer, file.mimetype, destinationPath);
+    const result = await uploadService.uploadFile(file.buffer, file.mimetype, destinationPath);
     if (!result) {
         return res.status(500).json({ message: "Failed to upload file" });
     }
@@ -32,7 +35,7 @@ exports.uploadContractDocument = async (req, res) => {
         return res.status(500).json({ message: "Failed to save document information" });
     }
 
-   const fileUrl = await supabaseBucketService.getSignedUrl(result.path);
+   const fileUrl = await uploadService.getFileUrl(result.path);
    const response = {
         message: "Uploaded successfully",
         contractDocument: {
@@ -66,7 +69,7 @@ exports.deleteContractDocument = async (req, res) => {
         return res.status(500).json({ message: "Failed to delete document information" });
     }
 
-    const deleted = await supabaseBucketService.deleteFile(filePath);
+    const deleted = await uploadService.deleteFile(filePath);
 
     return res.status(200).json({ message: "File deleted successfully" });
 }

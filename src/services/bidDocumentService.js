@@ -1,5 +1,7 @@
 const bidDocumentRepository = require("../repositories/bidDocumentRepository");
-const supabaseBucketService = require("../services/supabaseBucketService");
+const getUploadService = require("../factories/uploadFactory");
+const uploadService = getUploadService();
+// const supabaseBucketService = require("../services/supabaseBucketService");
 
 exports.getBidDocumentsByProcurementBidId = async (procurementBidId) => {
     const bidDocuments = await bidDocumentRepository.getBidDocumentsByProcurementBidId(procurementBidId);
@@ -8,7 +10,7 @@ exports.getBidDocumentsByProcurementBidId = async (procurementBidId) => {
     }
 
     const documentsWithUrls = bidDocuments.map(async (doc) => {
-        const fileUrl = await supabaseBucketService.getSignedUrl(doc.file_path);
+        const fileUrl = await uploadService.getFileUrl(doc.file_path);
         const jsonDoc = doc.toJSON();
         jsonDoc.file_url = fileUrl;
         return jsonDoc;
